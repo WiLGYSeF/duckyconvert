@@ -127,6 +127,9 @@ def main(argv):
 					pressdelay = 0
 
 				i += 1
+			elif argv[i][0] == "-":
+				print(helpstring)
+				exit(1)
 			else:
 				wasArg = False
 
@@ -512,7 +515,7 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
 {
 ''' % (rcount)
 
-			tstr, tstat, tlast = translateCmd(lastcmd[0], lastcmd[1], lastcmd)
+			tstr, tstat, tlast = translateCmd(lastcmd[0], lastcmd[1], lastcmd, options)
 			if tstat == 1:
 				return failed
 
@@ -523,11 +526,12 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
 
 			string += "}\n"
 		else:
-			tstr, tstat, tlast = translateCmd(lastcmd[0], lastcmd[1], lastcmd)
+			tstr, tstat, tlast = translateCmd(lastcmd[0], lastcmd[1], lastcmd, options)
 			if tstat == 1:
 				return failed
 
 			string = tstr
+		status = 2
 	elif cmd in replaceunprintablemap or cmd in unprintablelist:
 		c = cmd
 		if c in replaceunprintablemap:
