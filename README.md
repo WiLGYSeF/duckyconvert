@@ -1,5 +1,5 @@
 # duckyconvert
-Converts duckyscript to Arduino/Teensy keyboard HID code.
+Converts duckyscript to Arduino, Teensy, or Digispark keyboard HID code.
 
 ## Duckyscript Syntax
 A description of the different commands in duckyscript and how they convert.

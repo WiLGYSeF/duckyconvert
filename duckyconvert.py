@@ -367,7 +367,10 @@ void setup()
 			outf.write(indentStr(s, 1))
 
 		if r != 2 and g_globaldelay > 0:
-			outf.write(indentStr("delay(" + str(g_globaldelay) + ");", 1))
+			if options["convertType"] == "Digispark":
+				outf.write(indentStr("DigiKeyboard.delay(" + str(g_globaldelay) + ");", 1))
+			else:
+				outf.write(indentStr("delay(" + str(g_globaldelay) + ");", 1))
 
 	if options["convertType"] == "Arduino":
 		outf.write(
@@ -575,7 +578,10 @@ def translateCmd(cmd, val, lastcmd, options={}):
 			return failed
 
 		val = val.strip()
-		string = "delay(" + str(int(val)) + ");"
+		if options["convertType"] == "Digispark":
+			string = "DigiKeyboard.delay(" + str(int(val)) + ");"
+		else:
+			string = "delay(" + str(int(val)) + ");"
 		status = 2
 	elif cmd == "STRING":
 		if val is None:
@@ -650,7 +656,10 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
 			string += indentStr(tstr, 1)
 
 			if g_globaldelay > 0:
-				string += indentStr("delay(" + str(g_globaldelay) + ");", 1)
+				if options["convertType"] == "Digispark":
+					string += indentStr("DigiKeyboard.delay(" + str(g_globaldelay) + ");", 1)
+				else:
+					string += indentStr("delay(" + str(g_globaldelay) + ");", 1)
 
 			string += "}\n"
 		else:
