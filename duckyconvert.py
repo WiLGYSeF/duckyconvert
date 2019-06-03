@@ -33,36 +33,33 @@ replaceunprintablemap = {
 }
 
 modkeymap = {
-	"CONTROL": "MODIFIERKEY_CTRL",
-	"CTRL": "MODIFIERKEY_CTRL",
-	"SHIFT": "MODIFIERKEY_SHIFT",
-	"ALT": "MODIFIERKEY_ALT",
-	"GUI": "MODIFIERKEY_GUI",
-	"SUPER": "MODIFIERKEY_GUI",
-	"WINDOWS": "MODIFIERKEY_GUI",
-}
-
-arduinoconvertmap = {
-	"MODIFIERKEY_ALT": "KEY_LEFT_ALT",
-	"MODIFIERKEY_CTRL": "KEY_LEFT_CTRL",
-	"MODIFIERKEY_GUI": "KEY_LEFT_GUI",
-	"MODIFIERKEY_SHIFT": "KEY_LEFT_SHIFT",
-	"UP": "UP_ARROW",
-	"DOWN": "DOWN_ARROW",
-	"LEFT": "LEFT_ARROW",
-	"RIGHT": "RIGHT_ARROW",
-	"ENTER": "RETURN",
-}
-
-digisparkconvertmap = {
-	"MODIFIERKEY_ALT": "MOD_ALT_LEFT",
-	"MODIFIERKEY_CTRL": "MOD_CONTROL_LEFT",
-	"MODIFIERKEY_GUI": "MOD_GUI_LEFT",
-	"MODIFIERKEY_SHIFT": "MOD_SHIFT_LEFT",
-	"UP": "ARROW_UP",
-	"DOWN": "ARROW_DOWN",
-	"LEFT": "ARROW_LEFT",
-	"RIGHT": "ARROW_RIGHT"
+	"Teensy": {
+		"CONTROL": "MODIFIERKEY_CTRL",
+		"CTRL": "MODIFIERKEY_CTRL",
+		"SHIFT": "MODIFIERKEY_SHIFT",
+		"ALT": "MODIFIERKEY_ALT",
+		"GUI": "MODIFIERKEY_GUI",
+		"SUPER": "MODIFIERKEY_GUI",
+		"WINDOWS": "MODIFIERKEY_GUI"
+	},
+	"Arduino": {
+		"CONTROL": "KEY_LEFT_CTRL",
+		"CTRL": "KEY_LEFT_CTRL",
+		"SHIFT": "KEY_LEFT_SHIFT",
+		"ALT": "KEY_LEFT_ALT",
+		"GUI": "KEY_LEFT_GUI",
+		"SUPER": "KEY_LEFT_GUI",
+		"WINDOWS": "KEY_LEFT_GUI"
+	},
+	"Digispark": {
+		"CONTROL": "MOD_CONTROL_LEFT",
+		"CTRL": "MOD_CONTROL_LEFT",
+		"SHIFT": "MOD_SHIFT_LEFT",
+		"ALT": "MOD_ALT_LEFT",
+		"GUI": "MOD_GUI_LEFT",
+		"SUPER": "MOD_GUI_LEFT",
+		"WINDOWS": "MOD_GUI_LEFT"
+	}
 }
 
 helpstring = '''
@@ -216,6 +213,12 @@ void setup()
 #define KEY_NUM_LOCK 0xdb
 #define KEY_MENU 0xed
 
+#define KEY_UP KEY_UP_ARROW
+#define KEY_DOWN KEY_DOWN_ARROW
+#define KEY_LEFT KEY_LEFT_ARROW
+#define KEY_RIGHT KEY_RIGHT_ARROW
+#define KEY_ENTER KEY_RETURN
+
 void setup()
 {
 	Keyboard.begin();
@@ -288,6 +291,11 @@ void setup()
 #define KEY_F22 113
 #define KEY_F23 114
 #define KEY_F24 115
+
+#define KEY_UP KEY_ARROW_UP
+#define KEY_DOWN KEY_ARROW_DOWN
+#define KEY_LEFT KEY_ARROW_LEFT
+#define KEY_RIGHT KEY_ARROW_RIGHT
 
 void setup()
 {
@@ -588,7 +596,7 @@ def translateCmd(cmd, val, lastcmd, options={}):
 		if len(cspl) > 1:
 			cidx = 0
 			while cidx < len(cspl):
-				if cspl[cidx] not in modkeymap:
+				if cspl[cidx] not in modkeymap[options["convertType"]]:
 					break
 				cidx += 1
 
@@ -657,13 +665,6 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
 		if c in replaceunprintablemap:
 			c = replaceunprintablemap[c]
 
-		if options["convertType"] == "Arduino":
-			if c in arduinoconvertmap:
-				c = arduinoconvertmap[c]
-		elif options["convertType"] == "Digispark":
-			if c in digisparkconvertmap:
-				c = digisparkconvertmap[c]
-
 		string = "typekey(KEY_" + c + ");"
 	else:
 		print("Error: unknown command: " + cmd, file=sys.stderr)
@@ -674,10 +675,10 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
 	return (string, status, lastcmd)
 
 def getcombo(cmd, key, options={}):
-	if cmd not in modkeymap:
+	if cmd not in modkeymap[options["convertType"]]:
 		return None
 
-	modifiers = [modkeymap[cmd]]
+	modifiers = [modkeymap[options["convertType"]][cmd]]
 
 	if key is not None and key != "":
 		kspl = key.split(" ")
@@ -685,17 +686,12 @@ def getcombo(cmd, key, options={}):
 
 		while i < len(kspl):
 			k = kspl[i]
-			if k not in modkeymap:
+			if k not in modkeymap[options["convertType"]]:
 				break
 
-			modifiers.append(modkeymap[k]);
+			modifiers.append(modkeymap[options["convertType"]][k]);
 			i += 1
 		key = " ".join(kspl[i:])
-
-	if options["convertType"] == "Arduino":
-		modifiers = list(map(lambda x: arduinoconvertmap[x], modifiers))
-	elif options["convertType"] == "Digispark":
-		modifiers = list(map(lambda x: digisparkconvertmap[x], modifiers))
 
 	if key is not None and key != "":
 		keyconst = getkeyfromstr(key, options)
@@ -749,12 +745,6 @@ def getkeyfromstr(key, options={}):
 		key = replaceunprintablemap[key]
 
 	if key in unprintablelist:
-		if options["convertType"] == "Arduino":
-			if key in arduinoconvertmap:
-				key = arduinoconvertmap[key]
-		elif options["convertType"] == "Digispark":
-			if key in digisparkconvertmap:
-				key = digisparkconvertmap[key]
 		return "KEY_" + key
 
 	return None
