@@ -2,7 +2,7 @@ import re
 import sys
 
 AUTHOR = "WiLGYSeF"
-VERSION = 1.1
+VERSION = 1.2
 
 g_globaldelay = 0
 
@@ -54,6 +54,17 @@ arduinoconvertmap = {
 	"ENTER": "RETURN",
 }
 
+digisparkconvertmap = {
+	"MODIFIERKEY_ALT": "MOD_ALT_LEFT",
+	"MODIFIERKEY_CTRL": "MOD_CONTROL_LEFT",
+	"MODIFIERKEY_GUI": "MOD_GUI_LEFT",
+	"MODIFIERKEY_SHIFT": "MOD_SHIFT_LEFT",
+	"UP": "ARROW_UP",
+	"DOWN": "ARROW_DOWN",
+	"LEFT": "ARROW_LEFT",
+	"RIGHT": "ARROW_RIGHT"
+}
+
 helpstring = '''
 Usage: duckyconvert.py [options] [input file] [output file]
 Converts duckyscript code to Arduino/Teensy code
@@ -61,6 +72,7 @@ Converts duckyscript code to Arduino/Teensy code
   -h, --help                    shows this help menu
   -a, --arduino                 convert to Arduino-style code (default)
   -t, --teensy                  convert to Teensy-style code
+  -d, --digispark               convert to Digispark-style code
   -w, --wait [ms]               time to wait for initial keyboard recognition
   -p, --press-delay [ms]        delay between key press and release
                                   (default: 0)
@@ -96,6 +108,8 @@ def main(argv):
 				convertType = "Arduino"
 			elif argv[i] == "-t" or argv[i] == "--teensy":
 				convertType = "Teensy"
+			elif argv[i] == "-d" or argv[i] == "--digispark":
+				convertType = "Digispark"
 			elif argv[i] == "-w" or argv[i] == "--wait":
 				if i == len(argv) - 1:
 					print(helpstring)
@@ -207,6 +221,78 @@ void setup()
 	Keyboard.begin();
 '''
 		)
+	elif options["convertType"] == "Digispark":
+		outf.write(
+'''
+#include "DigiKeyboard.h"
+
+#define KEY_ESC 41
+#define KEY_BACKSPACE 42
+#define KEY_TAB 43
+#define KEY_MINUS 45
+#define KEY_EQUAL 46
+#define KEY_LEFT_BRACE 47
+#define KEY_RIGHT_BRACE 48
+#define KEY_BACKSLASH 49
+
+#define KEY_SEMICOLON 51
+#define KEY_QUOTE 52
+#define KEY_TILDE 53
+#define KEY_COMMA 54
+#define KEY_PERIOD 55
+#define KEY_SLASH 56
+#define KEY_CAPS_LOCK 57
+
+#define KEY_PRINTSCREEN 70
+#define KEY_SCROLL_LOCK 71
+#define KEY_PAUSE 72
+#define KEY_INSERT 73
+#define KEY_HOME 74
+#define KEY_PAGE_UP 75
+#define KEY_DELETE 76
+#define KEY_END 77
+#define KEY_PAGE_DOWN 78
+#define KEY_ARROW_RIGHT 79
+
+#define KEY_ARROW_DOWN 81
+#define KEY_ARROW_UP 82
+#define KEY_NUM_LOCK 83
+#define KEYPAD_SLASH 84
+#define KEYPAD_ASTERIX 85
+#define KEYPAD_MINUS 86
+#define KEYPAD_PLUS 87
+#define KEYPAD_ENTER 88
+#define KEYPAD_1 89
+#define KEYPAD_2 90
+#define KEYPAD_3 91
+#define KEYPAD_4 92
+#define KEYPAD_5 93
+#define KEYPAD_6 94
+#define KEYPAD_7 95
+#define KEYPAD_8 96
+#define KEYPAD_9 97
+#define KEYPAD_0 98
+#define KEYPAD_PERIOD 99
+
+#define KEY_MENU 101
+
+#define KEY_F13 104
+#define KEY_F14 105
+#define KEY_F15 106
+#define KEY_F16 107
+#define KEY_F17 108
+#define KEY_F18 109
+#define KEY_F19 110
+#define KEY_F20 111
+#define KEY_F21 112
+#define KEY_F22 113
+#define KEY_F23 114
+#define KEY_F24 115
+
+void setup()
+{
+'''
+		)
 
 	if options["ledpin"] is not None:
 		outf.write(
@@ -244,6 +330,14 @@ void setup()
 	delay(%d);
 
 ''' % options["keyboardinitwait"]
+		)
+
+	if options["convertType"] == "Digispark":
+		outf.write(
+'''
+	DigiKeyboard.sendKeyStroke(0);
+	DigiKeyboard.delay(100);
+'''
 		)
 
 	lastcmd = [None, None]
@@ -379,28 +473,51 @@ void keycombo(int key, int mcount, ...)
 }
 '''
 		)
+	elif options["convertType"] == "Digispark":
+		outf.write(
+'''
+	int modifier = 0;
+	for (int i = 0; i < mcount; i++)
+		modifier |= va_arg(args, int);
 
-	outf.write(
+	DigiKeyboard.sendKeyStroke(key, modifier);
+
+	va_end(args);
+}
+'''
+		)
+
+	if options["convertType"] == "Digispark":
+		outf.write(
+'''
+void typekey(int key)
+{
+	DigiKeyboard.sendKeyStroke(key);
+}
+'''
+		)
+	else:
+		outf.write(
 '''
 void typekey(int key)
 {
 	Keyboard.press(key);
 '''
-	)
+		)
 
-	if options["pressdelay"] > 0:
-		outf.write(
+		if options["pressdelay"] > 0:
+			outf.write(
 '''\
 	delay(%d);
 ''' % (options["pressdelay"])
-		)
+			)
 
-	outf.write(
+		outf.write(
 '''\
 	Keyboard.release(key);
 }
 '''
-	)
+		)
 
 	return True
 
@@ -458,7 +575,10 @@ def translateCmd(cmd, val, lastcmd, options={}):
 			return failed
 
 		v = val.replace("\\", "\\\\").replace("\"", "\\\"")
-		string = "Keyboard.print(\"" + v + "\");"
+		if options["convertType"] == "Digispark":
+			string = "DigiKeyboard.print(\"" + v + "\");"
+		else:
+			string = "Keyboard.print(\"" + v + "\");"
 	elif cmd.startswith("CONTROL") or cmd.startswith("CTRL") or cmd.startswith("SHIFT") or cmd.startswith("ALT") or cmd.startswith("GUI") or cmd.startswith("SUPER") or cmd.startswith("WINDOWS"):
 		if val is not None:
 			val = val.strip()
@@ -486,7 +606,7 @@ def translateCmd(cmd, val, lastcmd, options={}):
 	elif cmd == "APP" or cmd == "MENU":
 		string = "typekey(KEY_MENU);"
 		"""
-		#deprecated code for context menu
+		#old code for context menu
 		tstr, tstat, tlast = translateCmd("SHIFT", "F10", lastcmd, options)
 		if tstat != 1:
 			string = tstr
@@ -540,6 +660,9 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
 		if options["convertType"] == "Arduino":
 			if c in arduinoconvertmap:
 				c = arduinoconvertmap[c]
+		elif options["convertType"] == "Digispark":
+			if c in digisparkconvertmap:
+				c = digisparkconvertmap[c]
 
 		string = "typekey(KEY_" + c + ");"
 	else:
@@ -571,6 +694,8 @@ def getcombo(cmd, key, options={}):
 
 	if options["convertType"] == "Arduino":
 		modifiers = list(map(lambda x: arduinoconvertmap[x], modifiers))
+	elif options["convertType"] == "Digispark":
+		modifiers = list(map(lambda x: digisparkconvertmap[x], modifiers))
 
 	if key is not None and key != "":
 		keyconst = getkeyfromstr(key, options)
@@ -615,7 +740,7 @@ def getkeyfromstr(key, options={}):
 
 	if len(key) == 1:
 		if key.isalpha() or key.isdigit() or key in asciinamemap:
-			if options["convertType"] == "Teensy":
+			if options["convertType"] == "Teensy" or options["convertType"] == "Digispark":
 				return "KEY_" + key
 			elif options["convertType"] == "Arduino":
 				return "'" + key + "'"
@@ -627,6 +752,9 @@ def getkeyfromstr(key, options={}):
 		if options["convertType"] == "Arduino":
 			if key in arduinoconvertmap:
 				key = arduinoconvertmap[key]
+		elif options["convertType"] == "Digispark":
+			if key in digisparkconvertmap:
+				key = digisparkconvertmap[key]
 		return "KEY_" + key
 
 	return None
