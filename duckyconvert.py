@@ -75,16 +75,18 @@ Converts duckyscript code to Arduino/Teensy code
                                   (default: 0)
   -l, --led [pin]               LED HIGH when typing, blink when done
                                   use built-in pin with "LED_BUILTIN"
+  -f, --flash                   use the F() macro for storing strings in flash
 '''
 
 def main(argv):
 	infname = None
 	outfname = None
 
-	keyboardinitwait = 2000
 	convertType = "Arduino"
-	ledpin = None
+	keyboardinitwait = 2000
 	pressdelay = 0
+	ledpin = None
+	flashMacro = False
 
 	literalarg = False
 
@@ -117,6 +119,16 @@ def main(argv):
 					keyboardinitwait = 0
 
 				i += 1
+			elif argv[i] == "-p" or argv[i] == "--press-delay":
+				if i == len(argv) - 1:
+					print(helpstring)
+					exit(1)
+
+				pressdelay = int(argv[i + 1])
+				if pressdelay < 0:
+					pressdelay = 0
+
+				i += 1
 			elif argv[i] == "-l" or argv[i] == "--led":
 				if i == len(argv) - 1:
 					print(helpstring)
@@ -128,16 +140,8 @@ def main(argv):
 					print(helpstring)
 					exit(1)
 				i += 1
-			elif argv[i] == "-p" or argv[i] == "--press-delay":
-				if i == len(argv) - 1:
-					print(helpstring)
-					exit(1)
-
-				pressdelay = int(argv[i + 1])
-				if pressdelay < 0:
-					pressdelay = 0
-
-				i += 1
+			elif argv[i] == "-f" or argv[i] == "--flash":
+				flashMacro = True
 			elif argv[i][0] == "-":
 				print(helpstring)
 				exit(1)
@@ -173,10 +177,11 @@ def main(argv):
 		outf = open(outfname, "w")
 
 	status = convertToFile(inf, outf, {
-		"keyboardinitwait": keyboardinitwait,
 		"convertType": convertType,
+		"keyboardinitwait": keyboardinitwait,
+		"pressdelay": pressdelay,
 		"ledpin": ledpin,
-		"pressdelay": pressdelay
+		"flashMacro": flashMacro
 	})
 
 	if infname is not None:
@@ -368,9 +373,9 @@ void setup()
 
 		if r != 2 and g_globaldelay > 0:
 			if options["convertType"] == "Digispark":
-				outf.write(indentStr("DigiKeyboard.delay(" + str(g_globaldelay) + ");", 1))
+				outf.write(indentStr('DigiKeyboard.delay(' + str(g_globaldelay) + ');', 1))
 			else:
-				outf.write(indentStr("delay(" + str(g_globaldelay) + ");", 1))
+				outf.write(indentStr('delay(' + str(g_globaldelay) + ');', 1))
 
 	if options["convertType"] == "Arduino":
 		outf.write(
@@ -579,9 +584,9 @@ def translateCmd(cmd, val, lastcmd, options={}):
 
 		val = val.strip()
 		if options["convertType"] == "Digispark":
-			string = "DigiKeyboard.delay(" + str(int(val)) + ");"
+			string = 'DigiKeyboard.delay(' + str(int(val)) + ');'
 		else:
-			string = "delay(" + str(int(val)) + ");"
+			string = 'delay(' + str(int(val)) + ');'
 		status = 2
 	elif cmd == "STRING":
 		if val is None:
@@ -589,10 +594,16 @@ def translateCmd(cmd, val, lastcmd, options={}):
 			return failed
 
 		v = val.replace("\\", "\\\\").replace("\"", "\\\"")
-		if options["convertType"] == "Digispark":
-			string = "DigiKeyboard.print(\"" + v + "\");"
+
+		if options["flashMacro"]:
+			v = 'F("' + v + '")'
 		else:
-			string = "Keyboard.print(\"" + v + "\");"
+			v = '"' + v + '"'
+
+		if options["convertType"] == "Digispark":
+			string = 'DigiKeyboard.print(' + v + ');'
+		else:
+			string = 'Keyboard.print(' + v + ');'
 	elif cmd.startswith("CONTROL") or cmd.startswith("CTRL") or cmd.startswith("SHIFT") or cmd.startswith("ALT") or cmd.startswith("GUI") or cmd.startswith("SUPER") or cmd.startswith("WINDOWS"):
 		if val is not None:
 			val = val.strip()
@@ -618,7 +629,7 @@ def translateCmd(cmd, val, lastcmd, options={}):
 			print("Error: invalid key for " + cmd + ": " + val, file=sys.stderr)
 			return failed
 	elif cmd == "APP" or cmd == "MENU":
-		string = "typekey(KEY_MENU);"
+		string = 'typekey(KEY_MENU);'
 		"""
 		#old code for context menu
 		tstr, tstat, tlast = translateCmd("SHIFT", "F10", lastcmd, options)
@@ -657,9 +668,9 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
 
 			if g_globaldelay > 0:
 				if options["convertType"] == "Digispark":
-					string += indentStr("DigiKeyboard.delay(" + str(g_globaldelay) + ");", 1)
+					string += indentStr('DigiKeyboard.delay(' + str(g_globaldelay) + ');', 1)
 				else:
-					string += indentStr("delay(" + str(g_globaldelay) + ");", 1)
+					string += indentStr('delay(' + str(g_globaldelay) + ');', 1)
 
 			string += "}\n"
 		else:
@@ -674,7 +685,7 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
 		if c in replaceunprintablemap:
 			c = replaceunprintablemap[c]
 
-		string = "typekey(KEY_" + c + ");"
+		string = 'typekey(KEY_' + c + ');'
 	else:
 		print("Error: unknown command: " + cmd, file=sys.stderr)
 		return failed
@@ -709,7 +720,7 @@ def getcombo(cmd, key, options={}):
 	else:
 		keyconst = "0"
 
-	return "keycombo(" + keyconst + ", " + str(len(modifiers)) + ", " + ", ".join(modifiers) + ");"
+	return 'keycombo(' + keyconst + ', ' + str(len(modifiers)) + ', ' + ', '.join(modifiers) + ');'
 
 def indentStr(s, indent):
 	r = ""
