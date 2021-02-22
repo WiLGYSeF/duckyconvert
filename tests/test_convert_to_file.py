@@ -13,7 +13,7 @@ class ConvertToFileTest(unittest.TestCase):
     def test_convert_to_file(self):
         duck = Converter()
         for fname in glob.glob(os.path.join(CONVERT_TO_FILE_DIR, '*.txt')):
-            fname_result = fname + '.result'
+            fname_result = fname[:-4] + '.ino'
             with open(fname, 'r') as file, open(fname_result, 'r') as file_res:
                 out_stream = io.StringIO()
                 duck.convert_to_file(file, out_stream)

@@ -3,4 +3,4 @@ htmlcov/
 examples/*.txt
 .coverage
 todo.txt
-*.ino
+
