@@ -160,10 +160,10 @@ def unsetup_keyboard(convert_type, **kwargs):
 
     return code_keyboard
 
-def keycombo(convert_type, **kwargs):
+def type_key(convert_type, **kwargs):
     press_delay = kwargs.get('press_delay', 0)
-    code_keycombo = '''\
-void keycombo(int key, int mcount, ...)
+    code_typekey = '''\
+void typeKey(int key, int mcount, ...)
 {
     va_list args;
     va_start(args, mcount);
@@ -175,8 +175,8 @@ void keycombo(int key, int mcount, ...)
         code_delay = '// delay(0);'
 
     if convert_type == TYPE_ARDUINO:
-        code_keycombo += (
-'''\
+        code_typekey += (
+'''
     for (int i = 0; i < mcount; i++)
         Keyboard.press(va_arg(args, int));
     %s
@@ -189,7 +189,7 @@ void keycombo(int key, int mcount, ...)
 ''' % (code_delay, code_delay)
         )
     elif convert_type == TYPE_TEENSY:
-        code_keycombo += (
+        code_typekey += (
 '''
     int modifier = 0;
     for (int i = 0; i < mcount; i++)
@@ -215,8 +215,8 @@ void keycombo(int key, int mcount, ...)
 ''' % (code_delay, code_delay)
         )
     elif convert_type == TYPE_DIGISPARK:
-        code_keycombo += (
-'''\
+        code_typekey += (
+'''
     int modifier = 0;
     for (int i = 0; i < mcount; i++)
         modifier |= va_arg(args, int);
@@ -225,8 +225,8 @@ void keycombo(int key, int mcount, ...)
 '''
         )
 
-    code_keycombo += '''\
+    code_typekey += '''\
     va_end(args);
 }
 '''
-    return code_keycombo
+    return code_typekey

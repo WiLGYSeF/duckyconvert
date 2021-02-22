@@ -16,11 +16,11 @@ TRANSLATE_LINE = {
     'DELAY abc': Exception(),
     'DELAY 50': 'delay(50);',
     'STRING this is a "test"': r'Keyboard.print("this is a \"test\"");',
-    'MENU': 'typekey(KEY_MENU);',
-    'PAGE_UP': 'typekey(KEY_PAGE_UP);',
-    'RETURN': 'typekey(KEY_ENTER);',
-    'CTRL b': "keycombo('B', 1, KEY_LEFT_CTRL);",
-    'CTRL-ALT-SHIFT c': "keycombo('C', 3, KEY_LEFT_CTRL, KEY_LEFT_ALT, KEY_LEFT_SHIFT);",
+    'MENU': 'typeKey(KEY_MENU, 0);',
+    'PAGE_UP': 'typeKey(KEY_PAGE_UP, 0);',
+    'RETURN': 'typeKey(KEY_ENTER, 0);',
+    'CTRL b': "typeKey('B', 1, KEY_LEFT_CTRL);",
+    'CTRL-ALT-SHIFT c': "typeKey('C', 3, KEY_LEFT_CTRL, KEY_LEFT_ALT, KEY_LEFT_SHIFT);",
     'CTRL-INVALID b': Exception(),
 }
 
@@ -33,12 +33,12 @@ TYPE_STRING = [
     {
         STRING: 'f',
         MODIFIERS: [],
-        RESULT: "typekey('F');"
+        RESULT: "typeKey('F', 0);"
     },
     {
         STRING: 'F',
         MODIFIERS: [],
-        RESULT: "typekey('F');"
+        RESULT: "typeKey('F', 0);"
     },
     {
         STRING: 'abcdef',
@@ -53,20 +53,19 @@ TYPE_STRING = [
     {
         STRING: 'b',
         MODIFIERS: ['CTRL', 'SHIFT'],
-        RESULT: "keycombo('B', 2, KEY_LEFT_CTRL, KEY_LEFT_SHIFT);"
+        RESULT: "typeKey('B', 2, KEY_LEFT_CTRL, KEY_LEFT_SHIFT);"
     },
     {
         STRING: 'abcdef',
         MODIFIERS: ['CTRL', 'SHIFT'],
-        RESULT: """\
-keycombo(0, 2, KEY_LEFT_CTRL, KEY_LEFT_SHIFT);
+        RESULT: '''\
 Keyboard.print("abcdef");
-keycombo(0, 0);"""
+'''
     },
     {
         STRING: 'F6',
         MODIFIERS: [],
-        RESULT: 'typekey(KEY_F6);'
+        RESULT: 'typeKey(KEY_F6, 0);'
     }
 ]
 
@@ -74,10 +73,9 @@ TYPE_STRING_DIGISPARK = [
     {
         STRING: 'yeet',
         MODIFIERS: ['ALT'],
-        RESULT: """\
-keycombo(0, 1, MOD_ALT_LEFT);
+        RESULT: '''\
 DigiKeyboard.print("yeet");
-keycombo(0, 0);"""
+'''
     }
 ]
 

@@ -16,8 +16,6 @@
 #define KEY_RIGHT KEY_RIGHT_ARROW
 #define KEY_ENTER KEY_RETURN
 
-#define typekey(x) keycombo(x, 0)
-
 void setup()
 {
     Keyboard.begin();
@@ -29,7 +27,7 @@ void setup()
     // spawn terminal
 
     delay(25);
-    keycombo('T', 2, KEY_LEFT_CTRL, KEY_LEFT_ALT);
+    typeKey('T', 2, KEY_LEFT_CTRL, KEY_LEFT_ALT);
 
     delay(25);
     delay(300);
@@ -39,22 +37,22 @@ void setup()
     // move to bottom corner of screen
 
     delay(25);
-    keycombo(KEY_F7, 1, KEY_LEFT_ALT);
+    typeKey(KEY_F7, 1, KEY_LEFT_ALT);
 
     delay(25);
-    keycombo(KEY_DOWN, 1, KEY_LEFT_SHIFT);
+    typeKey(KEY_DOWN, 1, KEY_LEFT_SHIFT);
 
     delay(25);
 
     for (int _repeat = 0; _repeat < 3; _repeat++)
     {
-        keycombo(KEY_DOWN, 1, KEY_LEFT_SHIFT);
+        typeKey(KEY_DOWN, 1, KEY_LEFT_SHIFT);
         delay(25);
     }
 
 
     delay(25);
-    typekey(KEY_ENTER);
+    typeKey(KEY_ENTER, 0);
 
     delay(25);
 
@@ -64,7 +62,7 @@ void setup()
     Keyboard.print("echo \"If you can read this, you are in big trouble\"");
 
     delay(25);
-    typekey(KEY_ENTER);
+    typeKey(KEY_ENTER, 0);
 
     delay(25);
     Keyboard.end();
@@ -72,10 +70,11 @@ void setup()
 
 void loop() {}
 
-void keycombo(int key, int mcount, ...)
+void typeKey(int key, int mcount, ...)
 {
     va_list args;
     va_start(args, mcount);
+
     for (int i = 0; i < mcount; i++)
         Keyboard.press(va_arg(args, int));
     // delay(0);

@@ -134,7 +134,7 @@ class Converter:
             return string
 
         if cmd in ('APP', 'MENU'):
-            return 'typekey(KEY_MENU);'
+            return 'typeKey(KEY_MENU, 0);'
         if cmd == 'REPEAT':
             if self.last_cmd is None:
                 raise ValueError('no command to repeat')
@@ -170,7 +170,7 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
 
             return string + '}\n'
         if cmd in KEYS_UNPRINTABLE_REPLACE or cmd in KEYS_UNPRINTABLE:
-            return 'typekey(KEY_%s);' % KEYS_UNPRINTABLE_REPLACE.get(cmd, cmd)
+            return 'typeKey(KEY_%s, 0);' % KEYS_UNPRINTABLE_REPLACE.get(cmd, cmd)
 
         raise ValueError('unknown command: %s' % cmd)
 
@@ -186,8 +186,8 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
         key = self.get_key_from_str(string)
         if key is not None:
             if len(modifiers) == 0:
-                return 'typekey(%s);' % key
-            return 'keycombo(%s, %d, %s);' % (key, len(modifiers), ', '.join(modifiers))
+                return 'typeKey(%s, 0);' % key
+            return 'typeKey(%s, %d, %s);' % (key, len(modifiers), ', '.join(modifiers))
 
         string = '"%s"' % string.replace('\\', r'\\').replace('"', r'\"')
         if self.flash_macro:
@@ -198,15 +198,9 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
                 return 'DigiKeyboard.print(%s);' % string
             return 'Keyboard.print(%s);' % string
 
-        result = 'keycombo(0, %d, %s);\n' % (len(modifiers), ', '.join(modifiers))
-
         if self.convert_type == TYPE_DIGISPARK:
-            result += 'DigiKeyboard.print(%s);\n' % string
-        else:
-            result += 'Keyboard.print(%s);\n' % string
-
-        result += 'keycombo(0, 0);'
-        return result
+            return 'DigiKeyboard.print(%s);\n' % string
+        return 'Keyboard.print(%s);\n' % string
 
     def indent_block(self, block, level, indent='    '):
         result = ''
@@ -274,8 +268,6 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
         outf.write(file_template.HEADER[self.convert_type])
 
         outf.write('''
-#define typekey(x) keycombo(x, 0)
-
 void setup()
 {
 '''
@@ -337,7 +329,7 @@ void loop() {}
 '''
             )
 
-        outf.write(file_template.keycombo(
+        outf.write(file_template.type_key(
             self.convert_type,
             press_delay=self.press_delay
         ))
