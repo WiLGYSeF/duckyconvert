@@ -162,7 +162,7 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
                 if self.global_delay > 0:
                     string += self.indent_block('delay(%d);' % self.global_delay, 1)
 
-            return string + '}\n'
+            return string + '}'
         if cmd in KEYS_UNPRINTABLE_REPLACE or cmd in KEYS_UNPRINTABLE:
             return 'kbd_type(KEY_%s);' % KEYS_UNPRINTABLE_REPLACE.get(cmd, cmd)
 
@@ -249,7 +249,10 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
                 translations.append(None)
                 continue
 
-            translations.append(self.translate_line(line.rstrip('\n')))
+            result = self.translate_line(line.rstrip('\n'))
+            if result is None:
+                continue
+            translations.append(result)
 
         return translations
 

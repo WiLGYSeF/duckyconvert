@@ -111,8 +111,8 @@ class DuckyconvertTest(unittest.TestCase):
 for (int _repeat = 0; _repeat < 2; _repeat++)
 {
     kbd_print("abcdef");
-}
-''')
+}'''
+        )
         self.assertEqual(duck.translate_line('REPEAT'), 'kbd_print("abcdef");')
 
         duck.translate_line('DEFAULT_DELAY 125')
@@ -121,8 +121,8 @@ for (int _repeat = 0; _repeat < 2; _repeat++)
 {
     kbd_print("abcdef");
     delay(125);
-}
-''')
+}'''
+        )
 
     def test_type_string(self):
         duck = Converter()

@@ -80,7 +80,6 @@ void setup()
     DigiKeyboard.delay(100);
 
 
-
     // spawn terminal
 
     delay(25);
@@ -106,7 +105,6 @@ void setup()
         kbd_type(KEY_DOWN, 1, MOD_SHIFT_LEFT);
         delay(25);
     }
-
 
     delay(25);
     kbd_type(KEY_ENTER);

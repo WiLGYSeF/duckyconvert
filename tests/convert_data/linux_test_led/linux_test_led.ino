@@ -36,7 +36,6 @@ void setup()
     digitalWrite(LED_BUILTIN, HIGH);
 
 
-
     // spawn terminal
 
     delay(25);
@@ -62,7 +61,6 @@ void setup()
         kbd_type(KEY_DOWN, 1, KEY_LEFT_SHIFT);
         delay(25);
     }
-
 
     delay(25);
     kbd_type(KEY_ENTER);
