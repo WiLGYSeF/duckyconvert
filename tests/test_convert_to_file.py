@@ -1,4 +1,3 @@
-import glob
 import io
 import os
 import unittest
@@ -6,13 +5,13 @@ import unittest
 from duckyconvert import Converter
 
 
-CONVERT_TO_FILE_DIR = os.path.join(os.path.dirname(__file__), 'convert_to_file/')
+CONVERT_DATA_DIR = os.path.join(os.path.dirname(__file__), 'convert_to_file/')
 
 
 class ConvertToFileTest(unittest.TestCase):
     def test_convert_to_file(self):
         duck = Converter()
-        for root, dirs, files in os.walk(CONVERT_TO_FILE_DIR):
+        for root, _, files in os.walk(CONVERT_DATA_DIR):
             for fname in files:
                 if not fname.endswith('.txt'):
                     continue

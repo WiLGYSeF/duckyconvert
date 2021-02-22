@@ -332,7 +332,7 @@ def main(argv):
 
     group = aparser.add_mutually_exclusive_group()
     group.add_argument('-a', '--arduino',
-        dest='convert_type', action='store_const', const=TYPE_ARDUINO,
+        dest='convert_type', action='store_const', const=TYPE_ARDUINO, default=TYPE_ARDUINO,
         help='convert to Arduino-style code (default)'
     )
     group.add_argument('-d', '--digispark',
@@ -348,7 +348,7 @@ def main(argv):
         metavar='MSEC', action='store', type=int, default=2000,
         help='time to wait for initial keyboard recognition (default 2000)'
     )
-    aparser.add_argument('--press-delay',
+    aparser.add_argument('-p', '--press-delay',
         metavar='MSEC', action='store', type=int, default=0,
         help='delay between key press and release'
     )
@@ -383,6 +383,7 @@ def main(argv):
         outfile = sys.stdout
 
     duck = Converter(
+        convert_type=argspace.convert_type,
         keyboard_init_wait=argspace.wait,
         press_delay=argspace.press_delay,
         led_pin=argspace.led,
