@@ -16,11 +16,11 @@ TRANSLATE_LINE = {
     'DELAY abc': Exception(),
     'DELAY 50': 'delay(50);',
     'STRING this is a "test"': r'kbd_print("this is a \"test\"");',
-    'MENU': 'typeKey(KEY_MENU, 0);',
-    'PAGE_UP': 'typeKey(KEY_PAGE_UP, 0);',
-    'RETURN': 'typeKey(KEY_ENTER, 0);',
-    'CTRL b': "typeKey('B', 1, KEY_LEFT_CTRL);",
-    'CTRL-ALT-SHIFT c': "typeKey('C', 3, KEY_LEFT_CTRL, KEY_LEFT_ALT, KEY_LEFT_SHIFT);",
+    'MENU': 'kbd_type(KEY_MENU);',
+    'PAGE_UP': 'kbd_type(KEY_PAGE_UP);',
+    'RETURN': 'kbd_type(KEY_ENTER);',
+    'CTRL b': "kbd_type('B', 1, KEY_LEFT_CTRL);",
+    'CTRL-ALT-SHIFT c': "kbd_type('C', 3, KEY_LEFT_CTRL, KEY_LEFT_ALT, KEY_LEFT_SHIFT);",
     'CTRL-INVALID b': Exception(),
 }
 
@@ -28,12 +28,12 @@ TYPE_STRING = [
     {
         STRING: 'f',
         MODIFIERS: [],
-        RESULT: "typeKey('F', 0);"
+        RESULT: "kbd_type('F');"
     },
     {
         STRING: 'F',
         MODIFIERS: [],
-        RESULT: "typeKey('F', 0);"
+        RESULT: "kbd_type('F');"
     },
     {
         STRING: 'abcdef',
@@ -48,7 +48,7 @@ TYPE_STRING = [
     {
         STRING: 'b',
         MODIFIERS: ['CTRL', 'SHIFT'],
-        RESULT: "typeKey('B', 2, KEY_LEFT_CTRL, KEY_LEFT_SHIFT);"
+        RESULT: "kbd_type('B', 2, KEY_LEFT_CTRL, KEY_LEFT_SHIFT);"
     },
     {
         STRING: 'abcdef',
@@ -58,7 +58,7 @@ TYPE_STRING = [
     {
         STRING: 'F6',
         MODIFIERS: [],
-        RESULT: 'typeKey(KEY_F6, 0);'
+        RESULT: 'kbd_type(KEY_F6);'
     }
 ]
 

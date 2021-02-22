@@ -131,7 +131,7 @@ class Converter:
             return string
 
         if cmd in ('APP', 'MENU'):
-            return 'typeKey(KEY_MENU, 0);'
+            return 'kbd_type(KEY_MENU);'
         if cmd == 'REPEAT':
             if self.last_cmd is None:
                 raise ValueError('no command to repeat')
@@ -161,7 +161,7 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
 
             return string + '}\n'
         if cmd in KEYS_UNPRINTABLE_REPLACE or cmd in KEYS_UNPRINTABLE:
-            return 'typeKey(KEY_%s, 0);' % KEYS_UNPRINTABLE_REPLACE.get(cmd, cmd)
+            return 'kbd_type(KEY_%s);' % KEYS_UNPRINTABLE_REPLACE.get(cmd, cmd)
 
         raise ValueError('unknown command: %s' % cmd)
 
@@ -177,8 +177,8 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
         key = self.get_key_from_str(string)
         if key is not None:
             if len(modifiers) == 0:
-                return 'typeKey(%s, 0);' % key
-            return 'typeKey(%s, %d, %s);' % (key, len(modifiers), ', '.join(modifiers))
+                return 'kbd_type(%s);' % key
+            return 'kbd_type(%s, %d, %s);' % (key, len(modifiers), ', '.join(modifiers))
 
         string = '"%s"' % string.replace('\\', r'\\').replace('"', r'\"')
         if self.flash_macro:
@@ -311,7 +311,7 @@ void loop() {}
 '''
             )
 
-        outf.write(file_template.type_key(
+        outf.write(file_template.kbd_type(
             self.convert_type,
             press_delay=self.press_delay
         ))

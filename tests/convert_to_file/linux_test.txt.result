@@ -30,7 +30,7 @@ void setup()
     // spawn terminal
 
     delay(25);
-    typeKey('T', 2, KEY_LEFT_CTRL, KEY_LEFT_ALT);
+    kbd_type('T', 2, KEY_LEFT_CTRL, KEY_LEFT_ALT);
 
     delay(25);
     delay(300);
@@ -40,22 +40,22 @@ void setup()
     // move to bottom corner of screen
 
     delay(25);
-    typeKey(KEY_F7, 1, KEY_LEFT_ALT);
+    kbd_type(KEY_F7, 1, KEY_LEFT_ALT);
 
     delay(25);
-    typeKey(KEY_DOWN, 1, KEY_LEFT_SHIFT);
+    kbd_type(KEY_DOWN, 1, KEY_LEFT_SHIFT);
 
     delay(25);
 
     for (int _repeat = 0; _repeat < 3; _repeat++)
     {
-        typeKey(KEY_DOWN, 1, KEY_LEFT_SHIFT);
+        kbd_type(KEY_DOWN, 1, KEY_LEFT_SHIFT);
         delay(25);
     }
 
 
     delay(25);
-    typeKey(KEY_ENTER, 0);
+    kbd_type(KEY_ENTER);
 
     delay(25);
 
@@ -65,7 +65,7 @@ void setup()
     kbd_print("echo \"If you can read this, you are in big trouble\"");
 
     delay(25);
-    typeKey(KEY_ENTER, 0);
+    kbd_type(KEY_ENTER);
 
     delay(25);
     Keyboard.end();
@@ -73,7 +73,12 @@ void setup()
 
 void loop() {}
 
-void typeKey(int key, int mcount, ...)
+void kbd_type(int key)
+{
+    kbd_type(key, 0);
+}
+
+void kbd_type(int key, int mcount, ...)
 {
     va_list args;
     va_start(args, mcount);

@@ -170,10 +170,15 @@ def unsetup_keyboard(convert_type, **kwargs):
 
     return code_keyboard
 
-def type_key(convert_type, **kwargs):
+def kbd_type(convert_type, **kwargs):
     press_delay = kwargs.get('press_delay', 0)
-    code_typekey = '''\
-void typeKey(int key, int mcount, ...)
+    code = '''\
+void kbd_type(int key)
+{
+    kbd_type(key, 0);
+}
+
+void kbd_type(int key, int mcount, ...)
 {
     va_list args;
     va_start(args, mcount);
@@ -185,7 +190,7 @@ void typeKey(int key, int mcount, ...)
         code_delay = '// delay(0);'
 
     if convert_type == TYPE_ARDUINO:
-        code_typekey += (
+        code += (
 '''
     for (int i = 0; i < mcount; i++)
         Keyboard.press(va_arg(args, int));
@@ -199,7 +204,7 @@ void typeKey(int key, int mcount, ...)
 ''' % (code_delay, code_delay)
         )
     elif convert_type == TYPE_TEENSY:
-        code_typekey += (
+        code += (
 '''
     int modifier = 0;
     for (int i = 0; i < mcount; i++)
@@ -225,7 +230,7 @@ void typeKey(int key, int mcount, ...)
 ''' % (code_delay, code_delay)
         )
     elif convert_type == TYPE_DIGISPARK:
-        code_typekey += (
+        code += (
 '''
     int modifier = 0;
     for (int i = 0; i < mcount; i++)
@@ -235,8 +240,8 @@ void typeKey(int key, int mcount, ...)
 '''
         )
 
-    code_typekey += '''\
+    code += '''\
     va_end(args);
 }
 '''
-    return code_typekey
+    return code
