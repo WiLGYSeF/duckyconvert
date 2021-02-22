@@ -99,9 +99,7 @@ class Converter:
                 raise ValueError('expecting value for %s' % cmd)
 
         if cmd == 'REM':
-            if val is not None:
-                return '// ' + val
-            return '//'
+            return '//' if val is None else '// ' + val
         if cmd in ('DEFAULT_DELAY', 'DEFAULTDELAY'):
             check_for_val()
             self.global_delay = int(val.strip())
