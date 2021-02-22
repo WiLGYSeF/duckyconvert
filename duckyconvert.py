@@ -366,10 +366,7 @@ def main(argv):
 
     argspace = aparser.parse_args(argv)
 
-    if argspace.led is not None and not re.fullmatch(
-        r'[A-Z_a-z][0-9A-Z_a-z]*|[0-9]+L?',
-        argspace.led
-    ):
+    if argspace.led is not None and not is_valid_led_pin(argspace.led):
         raise ValueError('invalid led pin name: %s' % argspace.led)
 
     if argspace.files[0] != '-':
@@ -398,6 +395,11 @@ def main(argv):
         if outfile != sys.stdout:
             outfile.close()
 
+def is_valid_led_pin(led_pin):
+    return re.fullmatch(
+        r'[A-Z_a-z][0-9A-Z_a-z]*|0x[0-9A-Fa-f]+|[0-9]+L?',
+        led_pin
+    ) is not None
 
 if __name__ == '__main__': #pragma: no cover
     main(sys.argv[1:])
