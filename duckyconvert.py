@@ -366,6 +366,12 @@ def main(argv):
 
     argspace = aparser.parse_args(argv)
 
+    if argspace.led is not None and not re.fullmatch(
+        r'[A-Z_a-z][0-9A-Z_a-z]*|[0-9]+L?',
+        argspace.led
+    ):
+        raise ValueError('invalid led pin name: %s' % argspace.led)
+
     if argspace.files[0] != '-':
         infile = open(argspace.files[0], 'r')
     else:
