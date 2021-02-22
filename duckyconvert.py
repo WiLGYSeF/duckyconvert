@@ -66,6 +66,7 @@ MODIFIER_KEYMAPS = {
 }
 
 CMD_SPECIAL = ['REM', 'DEFAULT_DELAY', 'DEFAULTDELAY', 'REPEAT']
+CMD_NO_DELAY  = ['REM', 'DEFAULT_DELAY', 'DEFAULTDELAY', 'DELAY', 'REPEAT']
 
 
 class Converter:
@@ -246,13 +247,13 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
             linenum += 1
 
             if len(line.strip()) == 0:
-                translations.append(None)
+                translations.append( (None, False) )
                 continue
 
             result = self.translate_line(line.rstrip('\n'))
             if result is None:
                 continue
-            translations.append(result)
+            translations.append( (result, line.split(' ')[0] not in CMD_NO_DELAY) )
 
         return translations
 
@@ -276,15 +277,14 @@ void setup()
 
         translations = self.translate_from_stream(inf)
 
-        for line in translations:
+        for line, do_delay in translations:
             if line is None:
                 outf.write('\n')
                 continue
 
             outf.write(self.indent_block(line, 1))
-            outf.write('\n')
 
-            if self.global_delay > 0:
+            if do_delay and self.global_delay > 0:
                 outf.write(self.indent_block('delay(%d);' % self.global_delay, 1))
 
         outf.write(self.indent_block(

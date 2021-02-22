@@ -219,14 +219,11 @@ void kbd_type(int key, int mcount, ...)
         Keyboard.set_key1(key);
         Keyboard.send_now();
         %s
-        Keyboard.set_modifier(0);
         Keyboard.set_key1(0);
-        Keyboard.send_now();
-    }else
-    {
-        Keyboard.set_modifier(0);
-        Keyboard.send_now();
     }
+
+    Keyboard.set_modifier(0);
+    Keyboard.send_now();
 ''' % (code_delay, code_delay)
         )
     elif convert_type == TYPE_DIGISPARK:

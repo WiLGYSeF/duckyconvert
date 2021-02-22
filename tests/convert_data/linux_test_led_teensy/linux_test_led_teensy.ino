@@ -20,23 +20,14 @@ void setup()
 
 
     // spawn terminal
-
-    delay(25);
     kbd_type(KEY_T, 2, MODIFIERKEY_CTRL, MODIFIERKEY_ALT);
-
     delay(25);
     delay(300);
 
-    delay(25);
-
     // move to bottom corner of screen
-
-    delay(25);
     kbd_type(KEY_F7, 1, MODIFIERKEY_ALT);
-
     delay(25);
     kbd_type(KEY_DOWN, 1, MODIFIERKEY_SHIFT);
-
     delay(25);
 
     for (int _repeat = 0; _repeat < 3; _repeat++)
@@ -44,20 +35,13 @@ void setup()
         kbd_type(KEY_DOWN, 1, MODIFIERKEY_SHIFT);
         delay(25);
     }
-
-    delay(25);
     kbd_type(KEY_ENTER);
-
     delay(25);
 
     // payload
-
-    delay(25);
     kbd_print("echo \"If you can read this, you are in big trouble\"");
-
     delay(25);
     kbd_type(KEY_ENTER);
-
     delay(25);
 
 }
@@ -93,13 +77,10 @@ void kbd_type(int key, int mcount, ...)
         Keyboard.set_key1(key);
         Keyboard.send_now();
         // delay(0);
-        Keyboard.set_modifier(0);
         Keyboard.set_key1(0);
-        Keyboard.send_now();
-    }else
-    {
-        Keyboard.set_modifier(0);
-        Keyboard.send_now();
     }
+
+    Keyboard.set_modifier(0);
+    Keyboard.send_now();
     va_end(args);
 }
