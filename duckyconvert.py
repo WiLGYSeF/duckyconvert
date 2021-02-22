@@ -1,773 +1,417 @@
+import argparse
 import re
 import sys
 
-AUTHOR = "WiLGYSeF"
-VERSION = 1.2
+import file_template
 
-g_globaldelay = 0
 
-unprintablelist = [
-	"ENTER", "ESC", "BACKSPACE", "TAB", "SPACE", "CAPS_LOCK", "PRINTSCREEN", "SCROLL_LOCK",
-	"PAUSE", "INSERT", "HOME", "PAGE_UP", "DELETE", "END", "PAGE_DOWN", "RIGHT",
-	"LEFT", "DOWN", "UP", "NUM_LOCK",
+TYPE_ARDUINO = 'arduino'
+TYPE_DIGISPARK = 'digispark'
+TYPE_TEENSY = 'teensy'
 
-	"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
-	"F13", "F14", "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22", "F23", "F24"
+KEYS_UNPRINTABLE = [
+    'ENTER', 'ESC', 'BACKSPACE', 'TAB', 'SPACE', 'CAPS_LOCK', 'PRINTSCREEN', 'SCROLL_LOCK',
+    'PAUSE', 'INSERT', 'HOME', 'PAGE_UP', 'DELETE', 'END', 'PAGE_DOWN', 'RIGHT',
+    'LEFT', 'DOWN', 'UP', 'NUM_LOCK',
+
+    'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
+    'F13', 'F14', 'F15', 'F16', 'F17', 'F18', 'F19', 'F20', 'F21', 'F22', 'F23', 'F24'
 ]
 
-replaceunprintablemap = {
-	"RETURN": "ENTER",
-	"ESCAPE": "ESC",
-	"CAPSLOCK": "CAPS_LOCK",
-	"PRINTSCR": "PRINTSCREEN",
-	"PRTSC": "PRINTSCREEN",
-	"SCROLLLOCK": "SCROLL_LOCK",
-	"BREAK": "PAUSE",
-	"PAGEUP": "PAGE_UP",
-	"PAGEDOWN": "PAGE_DOWN",
-	"RIGHTARROW": "RIGHT",
-	"LEFTARROW": "LEFT",
-	"DOWNARROW": "DOWN",
-	"UPARROW": "UP",
-	"NUMLOCK": "NUM_LOCK"
+KEYS_UNPRINTABLE_REPLACE = {
+    'RETURN': 'ENTER',
+    'ESCAPE': 'ESC',
+    'CAPSLOCK': 'CAPS_LOCK',
+    'PRINTSCR': 'PRINTSCREEN',
+    'PRTSC': 'PRINTSCREEN',
+    'SCROLLLOCK': 'SCROLL_LOCK',
+    'BREAK': 'PAUSE',
+    'PAGEUP': 'PAGE_UP',
+    'PAGEDOWN': 'PAGE_DOWN',
+    'RIGHTARROW': 'RIGHT',
+    'LEFTARROW': 'LEFT',
+    'DOWNARROW': 'DOWN',
+    'UPARROW': 'UP',
+    'NUMLOCK': 'NUM_LOCK'
 }
 
-modkeymap = {
-	"Teensy": {
-		"CONTROL": "MODIFIERKEY_CTRL",
-		"CTRL": "MODIFIERKEY_CTRL",
-		"SHIFT": "MODIFIERKEY_SHIFT",
-		"ALT": "MODIFIERKEY_ALT",
-		"GUI": "MODIFIERKEY_GUI",
-		"SUPER": "MODIFIERKEY_GUI",
-		"WINDOWS": "MODIFIERKEY_GUI"
-	},
-	"Arduino": {
-		"CONTROL": "KEY_LEFT_CTRL",
-		"CTRL": "KEY_LEFT_CTRL",
-		"SHIFT": "KEY_LEFT_SHIFT",
-		"ALT": "KEY_LEFT_ALT",
-		"GUI": "KEY_LEFT_GUI",
-		"SUPER": "KEY_LEFT_GUI",
-		"WINDOWS": "KEY_LEFT_GUI"
-	},
-	"Digispark": {
-		"CONTROL": "MOD_CONTROL_LEFT",
-		"CTRL": "MOD_CONTROL_LEFT",
-		"SHIFT": "MOD_SHIFT_LEFT",
-		"ALT": "MOD_ALT_LEFT",
-		"GUI": "MOD_GUI_LEFT",
-		"SUPER": "MOD_GUI_LEFT",
-		"WINDOWS": "MOD_GUI_LEFT"
-	}
+MODIFIER_KEYMAPS = {
+    TYPE_ARDUINO: {
+        'CONTROL': 'KEY_LEFT_CTRL',
+        'CTRL': 'KEY_LEFT_CTRL',
+        'SHIFT': 'KEY_LEFT_SHIFT',
+        'ALT': 'KEY_LEFT_ALT',
+        'GUI': 'KEY_LEFT_GUI',
+        'SUPER': 'KEY_LEFT_GUI',
+        'WINDOWS': 'KEY_LEFT_GUI'
+    },
+    TYPE_TEENSY: {
+        'CONTROL': 'MODIFIERKEY_CTRL',
+        'CTRL': 'MODIFIERKEY_CTRL',
+        'SHIFT': 'MODIFIERKEY_SHIFT',
+        'ALT': 'MODIFIERKEY_ALT',
+        'GUI': 'MODIFIERKEY_GUI',
+        'SUPER': 'MODIFIERKEY_GUI',
+        'WINDOWS': 'MODIFIERKEY_GUI'
+    },
+    TYPE_DIGISPARK: {
+        'CONTROL': 'MOD_CONTROL_LEFT',
+        'CTRL': 'MOD_CONTROL_LEFT',
+        'SHIFT': 'MOD_SHIFT_LEFT',
+        'ALT': 'MOD_ALT_LEFT',
+        'GUI': 'MOD_GUI_LEFT',
+        'SUPER': 'MOD_GUI_LEFT',
+        'WINDOWS': 'MOD_GUI_LEFT'
+    }
 }
 
-helpstring = '''
-Usage: duckyconvert.py [options] [input file] [output file]
-Converts duckyscript code to Arduino/Teensy code
+CMD_SPECIAL = ['REM', 'DEFAULT_DELAY', 'DEFAULTDELAY', 'REPEAT']
 
-  -h, --help                    shows this help menu
-  -a, --arduino                 convert to Arduino-style code (default)
-  -t, --teensy                  convert to Teensy-style code
-  -d, --digispark               convert to Digispark-style code
-  -w, --wait [ms]               time to wait for initial keyboard recognition
-  -p, --press-delay [ms]        delay between key press and release
-                                  (default: 0)
-  -l, --led [pin]               LED HIGH when typing, blink when done
-                                  use built-in pin with "LED_BUILTIN"
-  -f, --flash                   use the F() macro for storing strings in flash
-'''
 
-def main(argv):
-	infname = None
-	outfname = None
+class Converter:
+    def __init__(self):
+        self.convert_type = TYPE_ARDUINO
+        self.global_delay = 0
+        self.flash_macro = False
+        self.led_pin = None
+        self.keyboard_init_wait = 2000
+        self.press_delay = 0
 
-	convertType = "Arduino"
-	keyboardinitwait = 2000
-	pressdelay = 0
-	ledpin = None
-	flashMacro = False
+        self.last_cmd = None
 
-	literalarg = False
+    def translate_line(self, line):
+        cmd = line
+        val = None
 
-	i = 1
-	while i < len(argv):
-		if argv[i] == "--" and not literalarg:
-			literalarg = True
-			i += 1
-			continue
+        idx = line.find(' ')
+        if idx != -1:
+            cmd = line[0:idx]
+            val = line[idx + 1:]
 
-		wasArg = not literalarg
-		if not literalarg:
-			if argv[i] == "-h" or argv[i] == "--help":
-				print(helpstring)
-				exit(0)
+        result = self.translate_cmd(cmd, val)
+        if cmd not in CMD_SPECIAL:
+            self.last_cmd = [cmd, val]
+        return result
 
-			elif argv[i] == "-a" or argv[i] == "--arduino":
-				convertType = "Arduino"
-			elif argv[i] == "-t" or argv[i] == "--teensy":
-				convertType = "Teensy"
-			elif argv[i] == "-d" or argv[i] == "--digispark":
-				convertType = "Digispark"
-			elif argv[i] == "-w" or argv[i] == "--wait":
-				if i == len(argv) - 1:
-					print(helpstring)
-					exit(1)
+    def translate_cmd(self, cmd, val):
+        def check_for_val():
+            if val is None:
+                raise ValueError('expecting value for %s' % cmd)
 
-				keyboardinitwait = int(argv[i + 1])
-				if keyboardinitwait < 0:
-					keyboardinitwait = 0
+        if cmd == 'REM':
+            if val is not None:
+                return '// ' + val
+            return '//'
+        if cmd in ('DEFAULT_DELAY', 'DEFAULTDELAY'):
+            check_for_val()
+            self.global_delay = int(val.strip())
+            return None
+        if cmd == 'DELAY':
+            check_for_val()
+            val = val.strip()
+            if self.convert_type == TYPE_DIGISPARK:
+                return 'DigiKeyboard.delay(%d);' % int(val)
+            return 'delay(%d);' % int(val)
+        if cmd == 'STRING':
+            check_for_val()
+            return self.type_string(val)
 
-				i += 1
-			elif argv[i] == "-p" or argv[i] == "--press-delay":
-				if i == len(argv) - 1:
-					print(helpstring)
-					exit(1)
+        modifiers = [
+            'CONTROL',
+            'CTRL',
+            'SHIFT',
+            'ALT',
+            'GUI',
+            'SUPER',
+            'WINDOWS'
+        ]
 
-				pressdelay = int(argv[i + 1])
-				if pressdelay < 0:
-					pressdelay = 0
+        for mod in modifiers:
+            if not cmd.startswith(mod):
+                continue
 
-				i += 1
-			elif argv[i] == "-l" or argv[i] == "--led":
-				if i == len(argv) - 1:
-					print(helpstring)
-					exit(1)
+            string = self.type_string(val, cmd.split('-'))
+            if string is None:
+                raise ValueError('invalid key for %s: %s' % (cmd, val))
+            return string
 
-				ledpin = argv[i + 1]
-				if re.match(r'^([0-9]+|[A-Za-z_][A-Za-z0-9_]*)$', ledpin) is None:
-					print("Error: invalid LED pin number", file=sys.stderr)
-					print(helpstring)
-					exit(1)
-				i += 1
-			elif argv[i] == "-f" or argv[i] == "--flash":
-				flashMacro = True
-			elif argv[i][0] == "-":
-				print(helpstring)
-				exit(1)
-			else:
-				wasArg = False
+        if cmd in ('APP', 'MENU'):
+            return 'typekey(KEY_MENU);'
+        if cmd == 'REPEAT':
+            if self.last_cmd is None:
+                raise ValueError('no command to repeat')
 
-		if not wasArg:
-			if infname is None:
-				infname = argv[i]
-			elif outfname is None:
-				outfname = argv[i]
-			else:
-				print(helpstring)
-				exit(1)
-		i += 1
+            rcount = 1
+            if val is not None:
+                try:
+                    rcount = int(val.strip())
+                    if rcount <= 0:
+                        raise ValueError
+                except ValueError as verr:
+                    raise ValueError("invalid repeat count: %s" % val) from verr
 
-	if infname is None:
-		print(helpstring)
-		exit(1)
+            if rcount == 1:
+                return self.translate_cmd(self.last_cmd[0], self.last_cmd[1])
 
-	if not literalarg:
-		if infname == "-":
-			infname = None
-		if outfname == "-":
-			outfname = None
-
-	inf = sys.stdin
-	if infname is not None:
-		inf = open(infname, "r")
-
-	outf = sys.stdout
-	if outfname is not None:
-		outf = open(outfname, "w")
-
-	status = convertToFile(inf, outf, {
-		"convertType": convertType,
-		"keyboardinitwait": keyboardinitwait,
-		"pressdelay": pressdelay,
-		"ledpin": ledpin,
-		"flashMacro": flashMacro
-	})
-
-	if infname is not None:
-		inf.close()
-	if outfname is not None:
-		outf.close()
-
-	if not status:
-		exit(1)
-
-def convertToFile(inf, outf, options={}):
-	outf.write("//Generated by DuckyConvert v" + str(VERSION) + ", written by " + AUTHOR + "\n")
-
-	if options["convertType"] == "Teensy":
-		outf.write(
-'''
-#include <stdarg.h>
-
-void setup()
-{'''
-		)
-	elif options["convertType"] == "Arduino":
-		outf.write(
-'''
-#include <stdarg.h>
-
-#include <Keyboard.h>
-
-#define KEY_SPACE ' '
-
-#define KEY_PRINTSCREEN 0xce
-#define KEY_SCROLL_LOCK 0xcf
-#define KEY_PAUSE 0xd4
-#define KEY_NUM_LOCK 0xdb
-#define KEY_MENU 0xed
-
-#define KEY_UP KEY_UP_ARROW
-#define KEY_DOWN KEY_DOWN_ARROW
-#define KEY_LEFT KEY_LEFT_ARROW
-#define KEY_RIGHT KEY_RIGHT_ARROW
-#define KEY_ENTER KEY_RETURN
-
-void setup()
+            string = '''
+for (int _repeat = 0; _repeat < %s; _repeat++)
 {
-	Keyboard.begin();
-'''
-		)
-	elif options["convertType"] == "Digispark":
-		outf.write(
-'''
-#include "DigiKeyboard.h"
+''' % (rcount)
 
-#define KEY_ESC 41
-#define KEY_BACKSPACE 42
-#define KEY_TAB 43
-#define KEY_MINUS 45
-#define KEY_EQUAL 46
-#define KEY_LEFT_BRACE 47
-#define KEY_RIGHT_BRACE 48
-#define KEY_BACKSLASH 49
+            result = self.translate_cmd(self.last_cmd[0], self.last_cmd[1])
+            if result is not None:
+                string += self.indent_block(result, 1)
+                if self.global_delay > 0:
+                    if self.convert_type == TYPE_DIGISPARK:
+                        string += self.indent_block(
+                            'DigiKeyboard.delay(%d);' % self.global_delay,
+                            1
+                        )
+                    else:
+                        string += self.indent_block('delay(%d);' % self.global_delay, 1)
 
-#define KEY_SEMICOLON 51
-#define KEY_QUOTE 52
-#define KEY_TILDE 53
-#define KEY_COMMA 54
-#define KEY_PERIOD 55
-#define KEY_SLASH 56
-#define KEY_CAPS_LOCK 57
+            return string + '}\n'
+        if cmd in KEYS_UNPRINTABLE_REPLACE or cmd in KEYS_UNPRINTABLE:
+            return 'typekey(KEY_%s);' % KEYS_UNPRINTABLE_REPLACE.get(cmd, cmd)
 
-#define KEY_PRINTSCREEN 70
-#define KEY_SCROLL_LOCK 71
-#define KEY_PAUSE 72
-#define KEY_INSERT 73
-#define KEY_HOME 74
-#define KEY_PAGE_UP 75
-#define KEY_DELETE 76
-#define KEY_END 77
-#define KEY_PAGE_DOWN 78
-#define KEY_ARROW_RIGHT 79
+        raise ValueError('unknown command: %s' % cmd)
 
-#define KEY_ARROW_DOWN 81
-#define KEY_ARROW_UP 82
-#define KEY_NUM_LOCK 83
-#define KEYPAD_SLASH 84
-#define KEYPAD_ASTERIX 85
-#define KEYPAD_MINUS 86
-#define KEYPAD_PLUS 87
-#define KEYPAD_ENTER 88
-#define KEYPAD_1 89
-#define KEYPAD_2 90
-#define KEYPAD_3 91
-#define KEYPAD_4 92
-#define KEYPAD_5 93
-#define KEYPAD_6 94
-#define KEYPAD_7 95
-#define KEYPAD_8 96
-#define KEYPAD_9 97
-#define KEYPAD_0 98
-#define KEYPAD_PERIOD 99
+    def type_string(self, string, modifiers=None):
+        if modifiers is None:
+            modifiers = []
 
-#define KEY_MENU 101
+        modifiers = list(map(
+            lambda x: MODIFIER_KEYMAPS[self.convert_type][x],
+            modifiers
+        ))
 
-#define KEY_F13 104
-#define KEY_F14 105
-#define KEY_F15 106
-#define KEY_F16 107
-#define KEY_F17 108
-#define KEY_F18 109
-#define KEY_F19 110
-#define KEY_F20 111
-#define KEY_F21 112
-#define KEY_F22 113
-#define KEY_F23 114
-#define KEY_F24 115
+        key = self.get_key_from_str(string)
+        if key is not None:
+            if len(modifiers) == 0:
+                return 'typekey(%s);' % key
+            return 'keycombo(%s, %d, %s);' % (key, len(modifiers), ', '.join(modifiers))
 
-#define KEY_UP KEY_ARROW_UP
-#define KEY_DOWN KEY_ARROW_DOWN
-#define KEY_LEFT KEY_ARROW_LEFT
-#define KEY_RIGHT KEY_ARROW_RIGHT
+        string = '"%s"' % string.replace('\\', r'\\').replace('"', r'\"')
+        if self.flash_macro:
+            string = 'F(%s)' % string
+
+        if len(modifiers) == 0:
+            if self.convert_type == TYPE_DIGISPARK:
+                return 'DigiKeyboard.print(%s);' % string
+            return 'Keyboard.print(%s);' % string
+
+        result = 'keycombo(0, %d, %s);\n' % (len(modifiers), ', '.join(modifiers))
+
+        if self.convert_type == TYPE_DIGISPARK:
+            result += 'DigiKeyboard.print(%s);\n' % string
+        else:
+            result += 'Keyboard.print(%s);\n' % string
+
+        result += 'keycombo(0, 0);'
+        return result
+
+    def indent_block(self, block, level, indent='    '):
+        result = ''
+        for line in block.split('\n'):
+            if len(line) == 0 or line.isspace():
+                result += '\n'
+            else:
+                result += (indent * level) + line + '\n'
+
+        return result
+
+    def get_key_from_str(self, key):
+        ascii_name_map = {
+            '-': 'MINUS',
+            '=': 'EQUAL',
+            '{': 'LEFT_BRACE',
+            '}': 'RIGHT_BRACE',
+            '\\': 'BACKSLASH',
+            ';': 'SEMICOLON',
+            "'": 'QUOTE',
+            '~': 'TILDE',
+            ',': 'COMMA',
+            '.': 'PERIOD',
+            '/': 'SLASH'
+        }
+
+        if key[0] in 'Ff' and (len(key) == 2 or len(key) == 3):
+            try:
+                num = int(key[1:])
+                if num >= 1 and num <= 24:
+                    return 'KEY_' + key
+                return None
+            except ValueError:
+                return None
+
+        if len(key) == 1:
+            if self.convert_type == TYPE_ARDUINO:
+                return "'%s'" % key.upper()
+
+            key = ascii_name_map.get(key, key)
+            return 'KEY_' + key
+
+        key = KEYS_UNPRINTABLE_REPLACE.get(key, key)
+        if key in KEYS_UNPRINTABLE:
+            return 'KEY_' + key
+
+        return None
+
+    def translate_from_stream(self, stream):
+        translations = []
+        linenum = 0
+
+        for line in stream:
+            linenum += 1
+
+            if len(line.strip()) == 0:
+                translations.append(None)
+                continue
+
+            translations.append(self.translate_line(line.rstrip('\n')))
+
+        return translations
+
+    def convert_to_file(self, inf, outf):
+        outf.write(file_template.HEADER[self.convert_type])
+
+        outf.write('''
+#define typekey(x) keycombo(x, 0)
 
 void setup()
 {
 '''
-		)
+        )
 
-	if options["ledpin"] is not None:
-		outf.write(
-'''
-	pinMode(%s, OUTPUT);
+        outf.write(self.indent_block(
+            file_template.setup_keyboard(
+                self.convert_type,
+                keyboard_init_wait=self.keyboard_init_wait,
+                led_pin=self.led_pin,
+            ),
+            1
+        ))
 
-	//wait for keyboard initialization
-	for (int i = 0; i < %d; i++)
-	{
-		digitalWrite(%s, HIGH);
-		delay(75);
-		digitalWrite(%s, LOW);
-		delay(75);
-	}
-''' % (options["ledpin"], options["keyboardinitwait"] // 150, options["ledpin"], options["ledpin"])
-		)
+        translations = self.translate_from_stream(inf)
 
-		if options["keyboardinitwait"] % 150 != 0:
-			outf.write(
-'''
-	delay(%d);
-''' % (options["keyboardinitwait"] % 150)
-			)
+        for line in translations:
+            if line is None:
+                outf.write('\n')
+                continue
 
-		outf.write(
-'''
-	digitalWrite(%s, HIGH);
+            outf.write(self.indent_block(line, 1))
+            outf.write('\n')
 
-''' % options["ledpin"]
-		)
-	else:
-		outf.write(
-'''
-	//wait for keyboard initialization
-	delay(%d);
+            if self.global_delay > 0:
+                delay_fnc = 'DigiKeyboard.delay' if self.convert_type == TYPE_DIGISPARK else 'delay'
+                outf.write(self.indent_block('%s(%d);' % (delay_fnc, self.global_delay), 1))
 
-''' % options["keyboardinitwait"]
-		)
+        outf.write(self.indent_block(
+            file_template.unsetup_keyboard(
+                self.convert_type,
+                led_pin=self.led_pin
+            ),
+            1
+        ))
 
-	if options["convertType"] == "Digispark":
-		outf.write(
-'''
-	DigiKeyboard.sendKeyStroke(0);
-	DigiKeyboard.delay(100);
-'''
-		)
-
-	lastcmd = [None, None]
-	linenum = 0
-
-	for line in inf:
-		linenum += 1
-
-		if len(line.strip()) == 0:
-			outf.write("\n")
-			continue
-
-		s, r, lastcmd = translateLine(line.rstrip("\n"), lastcmd, options)
-		if r == 1:
-			print("Error: could not translate line " + str(linenum) + ": " + line, file=sys.stderr)
-			return False
-
-		if s is not None:
-			outf.write(indentStr(s, 1))
-
-		if r != 2 and g_globaldelay > 0:
-			if options["convertType"] == "Digispark":
-				outf.write(indentStr('DigiKeyboard.delay(' + str(g_globaldelay) + ');', 1))
-			else:
-				outf.write(indentStr('delay(' + str(g_globaldelay) + ');', 1))
-
-	if options["convertType"] == "Arduino":
-		outf.write(
-'''
-	Keyboard.end();
-'''
-		)
-
-	if options["ledpin"] is not None:
-		outf.write(
+        if self.led_pin is not None:
+            outf.write(
 '''\
 }
 
 void loop()
 {
-	digitalWrite(%s, HIGH);
-	delay(500);
-	digitalWrite(%s, LOW);
-	delay(500);
+    digitalWrite(%s, HIGH);
+    delay(500);
+    digitalWrite(%s, LOW);
+    delay(500);
 }
-''' % (options["ledpin"], options["ledpin"])
-		)
-	else:
-		outf.write(
+
+''' % (self.led_pin, self.led_pin)
+            )
+        else:
+            outf.write(
 '''\
 }
 
 void loop() {}
+
 '''
-		)
+            )
 
-	outf.write(
-'''
-void keycombo(int key, int mcount, ...)
-{
-	va_list args;
-	va_start(args, mcount);
-'''
-	)
+        outf.write(file_template.keycombo(
+            self.convert_type,
+            press_delay=self.press_delay
+        ))
 
-	if options["convertType"] == "Teensy":
-		outf.write(
-'''
-	int modifier = 0;
-	for (int i = 0; i < mcount; i++)
-		modifier |= va_arg(args, int);
+        return True
 
-	Keyboard.set_modifier(modifier);
-	Keyboard.send_now();
-'''
-		)
 
-		if options["pressdelay"] > 0:
-			outf.write(
-'''\
-	delay(%d);
-''' % (options["pressdelay"])
-			)
-		outf.write(
-'''
-	if(key != 0)
-	{
-		Keyboard.set_key1(key);
-		Keyboard.send_now();
-'''
-		)
+def main(argv):
+    aparser = argparse.ArgumentParser(
+        description='Converts duckyscript code to Arduino/Teensy code'
+    )
 
-		if options["pressdelay"] > 0:
-			outf.write(
-'''\
-		delay(%d);
-''' % (options["pressdelay"])
-			)
+    group = aparser.add_mutually_exclusive_group()
+    group.add_argument('-a', '--arduino',
+        dest='convert_type', action='store_const', const=TYPE_ARDUINO,
+        help='convert to Arduino-style code (default)'
+    )
+    group.add_argument('-d', '--digispark',
+        dest='convert_type', action='store_const', const=TYPE_DIGISPARK,
+        help='convert to Digispark-style code'
+    )
+    group.add_argument('-t', '--teensy',
+        dest='convert_type', action='store_const', const=TYPE_TEENSY,
+        help='convert to Teensy-style code'
+    )
 
-		outf.write(
-'''
-		Keyboard.set_modifier(0);
-		Keyboard.set_key1(0);
-		Keyboard.send_now();
-	}else
-	{
-		Keyboard.set_modifier(0);
-		Keyboard.send_now();
-	}
+    aparser.add_argument('-w', '--wait',
+        metavar='MSEC', action='store', type=int, default=2000,
+        help='time to wait for initial keyboard recognition (default 2000)'
+    )
+    aparser.add_argument('--press-delay',
+        metavar='MSEC', action='store', type=int, default=0,
+        help='delay between key press and release'
+    )
+    aparser.add_argument('-l', '--led',
+        metavar='PIN', action='store', default=None,
+        help='turn on LED when typing, blink when done, use built-in pin with "LED_BUILTIN"'
+    )
+    aparser.add_argument('-f', '--flash',
+        action='store_true', default=False,
+        help='use the F() macro for storing strings in flash'
+    )
+    aparser.add_argument('files',
+        metavar='FILE', action='store', nargs=2
+    )
 
-	va_end(args);
-}
-'''
-		)
-	elif options["convertType"] == "Arduino":
-		outf.write(
-'''
-	for (int i = 0; i < mcount; i++)
-		Keyboard.press(va_arg(args, int));
+    argspace = aparser.parse_args(argv)
 
-	if(key != 0)
-		Keyboard.press(key);
-'''
-		)
+    if argspace.files[0] == '-':
+        infile = sys.stdin
+    else:
+        infile = open(argspace.files[0], 'r')
 
-		if options["pressdelay"] > 0:
-			outf.write(
-'''\
-	delay(%d);
-''' % (options["pressdelay"])
-			)
+    if argspace.files[1] == '-':
+        outfile = sys.stdout
+    else:
+        outfile = open(argspace.files[1], 'w')
 
-		outf.write(
-'''
-	Keyboard.releaseAll();
-}
-'''
-		)
-	elif options["convertType"] == "Digispark":
-		outf.write(
-'''
-	int modifier = 0;
-	for (int i = 0; i < mcount; i++)
-		modifier |= va_arg(args, int);
+    duck = Converter()
+    duck.keyboard_init_wait = argspace.wait
+    duck.press_delay = argspace.press_delay
+    duck.led_pin = argspace.led
+    duck.flash_macro = argspace.flash
 
-	DigiKeyboard.sendKeyStroke(key, modifier);
+    try:
+        duck.convert_to_file(infile, outfile)
+    finally:
+        if infile != sys.stdin:
+            infile.close()
+        if outfile != sys.stdout:
+            outfile.close()
 
-	va_end(args);
-}
-'''
-		)
 
-	if options["convertType"] == "Digispark":
-		outf.write(
-'''
-void typekey(int key)
-{
-	DigiKeyboard.sendKeyStroke(key);
-}
-'''
-		)
-	else:
-		outf.write(
-'''
-void typekey(int key)
-{
-	Keyboard.press(key);
-'''
-		)
-
-		if options["pressdelay"] > 0:
-			outf.write(
-'''\
-	delay(%d);
-''' % (options["pressdelay"])
-			)
-
-		outf.write(
-'''\
-	Keyboard.release(key);
-}
-'''
-		)
-
-	return True
-
-def translateLine(line, lastcmd, options={}):
-	cmd = line
-	val = None
-
-	idx = line.find(" ")
-	if idx != -1:
-		cmd = line[0:idx]
-		val = line[idx + 1:]
-
-	return translateCmd(cmd, val, lastcmd, options)
-
-def translateCmd(cmd, val, lastcmd, options={}):
-	global g_globaldelay
-
-	"""
-	status:
-	0 - success
-	1 - failed
-	2 - success, do not delay
-	"""
-
-	string = None
-	status = 0
-
-	failed = (None, 1, None)
-
-	if cmd == "REM":
-		if val is not None:
-			string = "//" + val
-		else:
-			string = "//"
-		status = 2
-	elif cmd == "DEFAULT_DELAY" or cmd == "DEFAULTDELAY":
-		if val is None:
-			print("Error: expecting value for " + cmd, file=sys.stderr)
-			return failed
-
-		val = val.strip()
-		g_globaldelay = int(val)
-		status = 2
-	elif cmd == "DELAY":
-		if val is None:
-			print("Error: expecting value for " + cmd, file=sys.stderr)
-			return failed
-
-		val = val.strip()
-		if options["convertType"] == "Digispark":
-			string = 'DigiKeyboard.delay(' + str(int(val)) + ');'
-		else:
-			string = 'delay(' + str(int(val)) + ');'
-		status = 2
-	elif cmd == "STRING":
-		if val is None:
-			print("Error: expecting value for " + cmd, file=sys.stderr)
-			return failed
-
-		v = val.replace("\\", "\\\\").replace("\"", "\\\"")
-
-		if options["flashMacro"]:
-			v = 'F("' + v + '")'
-		else:
-			v = '"' + v + '"'
-
-		if options["convertType"] == "Digispark":
-			string = 'DigiKeyboard.print(' + v + ');'
-		else:
-			string = 'Keyboard.print(' + v + ');'
-	elif cmd.startswith("CONTROL") or cmd.startswith("CTRL") or cmd.startswith("SHIFT") or cmd.startswith("ALT") or cmd.startswith("GUI") or cmd.startswith("SUPER") or cmd.startswith("WINDOWS"):
-		if val is not None:
-			val = val.strip()
-
-		#if the command is CTRL-SHIFT, etc.
-		cspl = cmd.split("-")
-		if len(cspl) > 1:
-			cidx = 0
-			while cidx < len(cspl):
-				if cspl[cidx] not in modkeymap[options["convertType"]]:
-					break
-				cidx += 1
-
-			if cidx != 0:
-				cmd = cspl[0]
-				if val is None:
-					val = " ".join(cspl[1:])
-				else:
-					val = " ".join(cspl[1:]) + " " + val
-
-		string = getcombo(cmd, val, options)
-		if string is None:
-			print("Error: invalid key for " + cmd + ": " + val, file=sys.stderr)
-			return failed
-	elif cmd == "APP" or cmd == "MENU":
-		string = 'typekey(KEY_MENU);'
-		"""
-		#old code for context menu
-		tstr, tstat, tlast = translateCmd("SHIFT", "F10", lastcmd, options)
-		if tstat != 1:
-			string = tstr
-		"""
-	elif cmd == "REPEAT":
-		if lastcmd[0] is None:
-			print("Error: no command to repeat", file=sys.stderr)
-			return failed
-
-		if val is not None:
-			try:
-				val = val.strip()
-				rcount = int(val)
-
-				if rcount <= 0:
-					raise Exception
-			except:
-				print("Error: invalid repeat count: " + val, file=sys.stderr)
-				return failed
-		else:
-			rcount = 1
-
-		if rcount > 1:
-			string = '''
-for (int _repeat = 0; _repeat < %s; _repeat++)
-{
-''' % (rcount)
-
-			tstr, tstat, tlast = translateCmd(lastcmd[0], lastcmd[1], lastcmd, options)
-			if tstat == 1:
-				return failed
-
-			string += indentStr(tstr, 1)
-
-			if g_globaldelay > 0:
-				if options["convertType"] == "Digispark":
-					string += indentStr('DigiKeyboard.delay(' + str(g_globaldelay) + ');', 1)
-				else:
-					string += indentStr('delay(' + str(g_globaldelay) + ');', 1)
-
-			string += "}\n"
-		else:
-			tstr, tstat, tlast = translateCmd(lastcmd[0], lastcmd[1], lastcmd, options)
-			if tstat == 1:
-				return failed
-
-			string = tstr
-		status = 2
-	elif cmd in replaceunprintablemap or cmd in unprintablelist:
-		c = cmd
-		if c in replaceunprintablemap:
-			c = replaceunprintablemap[c]
-
-		string = 'typekey(KEY_' + c + ');'
-	else:
-		print("Error: unknown command: " + cmd, file=sys.stderr)
-		return failed
-
-	if cmd not in ["REM", "DEFAULT_DELAY", "DEFAULTDELAY", "REPEAT"]:
-		lastcmd = [cmd, val]
-	return (string, status, lastcmd)
-
-def getcombo(cmd, key, options={}):
-	if cmd not in modkeymap[options["convertType"]]:
-		return None
-
-	modifiers = [modkeymap[options["convertType"]][cmd]]
-
-	if key is not None and key != "":
-		kspl = key.split(" ")
-		i = 0
-
-		while i < len(kspl):
-			k = kspl[i]
-			if k not in modkeymap[options["convertType"]]:
-				break
-
-			modifiers.append(modkeymap[options["convertType"]][k]);
-			i += 1
-		key = " ".join(kspl[i:])
-
-	if key is not None and key != "":
-		keyconst = getkeyfromstr(key, options)
-		if keyconst is None:
-			return None
-	else:
-		keyconst = "0"
-
-	return 'keycombo(' + keyconst + ', ' + str(len(modifiers)) + ', ' + ', '.join(modifiers) + ');'
-
-def indentStr(s, indent):
-	r = ""
-	for line in s.split("\n"):
-		r += ("\t" * indent) + line + "\n"
-
-	return r
-
-def getkeyfromstr(key, options={}):
-	asciinamemap = {
-		"-": "MINUS",
-		"=": "EQUAL",
-		"{": "LEFT_BRACE",
-		"}": "RIGHT_BRACE",
-		"\\": "BACKSLASH",
-		";": "SEMICOLON",
-		"\"": "QUOTE",
-		"~": "TILDE",
-		",": "COMMA",
-		".": "PERIOD",
-		"/": "SLASH"
-	}
-
-	key = key.upper()
-	if key[0] == 'F' and (len(key) == 2 or len(key) == 3):
-		try:
-			n = int(key[1:])
-			if n >= 1 and n <= 24:
-				return "KEY_" + key
-			return None
-		except:
-			return None
-
-	if len(key) == 1:
-		if key.isalpha() or key.isdigit() or key in asciinamemap:
-			if options["convertType"] == "Teensy" or options["convertType"] == "Digispark":
-				return "KEY_" + key
-			elif options["convertType"] == "Arduino":
-				return "'" + key + "'"
-
-	if key in replaceunprintablemap:
-		key = replaceunprintablemap[key]
-
-	if key in unprintablelist:
-		return "KEY_" + key
-
-	return None
-
-if __name__ == "__main__":
-	main(sys.argv)
+if __name__ == '__main__': #pragma: no cover
+    main(sys.argv[1:])
