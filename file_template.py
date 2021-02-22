@@ -7,6 +7,9 @@ HEADER_ARDUINO = '''\
 
 #include <Keyboard.h>
 
+#define kbd_print(x) Keyboard.print(x)
+#define kbd_println(x) Keyboard.println(x)
+
 #define KEY_SPACE ' '
 
 #define KEY_PRINTSCREEN 0xce
@@ -25,6 +28,8 @@ HEADER_ARDUINO = '''\
 HEADER_DIGISPARK = '''\
 #include "DigiKeyboard.h"
 
+#define kbd_print(x) DigiKeyboard.print(x)
+#define kbd_println(x) DigiKeyboard.println(x)
 #define delay(x) DigiKeyboard.delay(x)
 
 #define KEY_ESC 41
@@ -98,6 +103,9 @@ HEADER_DIGISPARK = '''\
 
 HEADER_TEENSY = '''\
 #include <stdarg.h>
+
+#define kbd_print(x) Keyboard.print(x)
+#define kbd_println(x) Keyboard.println(x)
 '''
 
 HEADER = {

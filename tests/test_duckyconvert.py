@@ -15,17 +15,13 @@ TRANSLATE_LINE = {
     'DELAY': Exception(),
     'DELAY abc': Exception(),
     'DELAY 50': 'delay(50);',
-    'STRING this is a "test"': r'Keyboard.print("this is a \"test\"");',
+    'STRING this is a "test"': r'kbd_print("this is a \"test\"");',
     'MENU': 'typeKey(KEY_MENU, 0);',
     'PAGE_UP': 'typeKey(KEY_PAGE_UP, 0);',
     'RETURN': 'typeKey(KEY_ENTER, 0);',
     'CTRL b': "typeKey('B', 1, KEY_LEFT_CTRL);",
     'CTRL-ALT-SHIFT c': "typeKey('C', 3, KEY_LEFT_CTRL, KEY_LEFT_ALT, KEY_LEFT_SHIFT);",
     'CTRL-INVALID b': Exception(),
-}
-
-TRANSLATE_LINE_DIGISPARK = {
-    'STRING this is a "test"': r'DigiKeyboard.print("this is a \"test\"");',
 }
 
 TYPE_STRING = [
@@ -42,12 +38,12 @@ TYPE_STRING = [
     {
         STRING: 'abcdef',
         MODIFIERS: [],
-        RESULT: 'Keyboard.print("abcdef");'
+        RESULT: 'kbd_print("abcdef");'
     },
     {
         STRING: 'abcd"ef"',
         MODIFIERS: [],
-        RESULT: r'Keyboard.print("abcd\"ef\"");'
+        RESULT: r'kbd_print("abcd\"ef\"");'
     },
     {
         STRING: 'b',
@@ -57,20 +53,12 @@ TYPE_STRING = [
     {
         STRING: 'abcdef',
         MODIFIERS: ['CTRL', 'SHIFT'],
-        RESULT: 'Keyboard.print("abcdef");'
+        RESULT: 'kbd_print("abcdef");'
     },
     {
         STRING: 'F6',
         MODIFIERS: [],
         RESULT: 'typeKey(KEY_F6, 0);'
-    }
-]
-
-TYPE_STRING_DIGISPARK = [
-    {
-        STRING: 'yeet',
-        MODIFIERS: ['ALT'],
-        RESULT: 'DigiKeyboard.print("yeet");'
     }
 ]
 
@@ -99,34 +87,14 @@ class DuckyconvertTest(unittest.TestCase):
             else:
                 self.assertEqual(duck.translate_line(key), val)
 
-    def test_translate_line_digispark(self):
-        for key, val in TRANSLATE_LINE_DIGISPARK.items():
-            duck = Converter()
-            duck.convert_type = duckyconvert.TYPE_DIGISPARK
-            if isinstance(val, Exception):
-                self.assertRaises(Exception, duck.translate_line, key)
-            else:
-                self.assertEqual(duck.translate_line(key), val)
-
-        duck.translate_line('STRING abcdef')
-        duck.translate_line('DEFAULT_DELAY 125')
-        self.assertEqual(duck.translate_line('REPEAT 2'), '''
-for (int _repeat = 0; _repeat < 2; _repeat++)
-{
-    DigiKeyboard.print("abcdef");
-    delay(125);
-}
-''')
-
     def test_translate_line_default_delay(self):
         duck = Converter()
         duck.translate_line('DEFAULT_DELAY 125')
         self.assertEqual(duck.global_delay, 125)
 
     def test_translate_line_flash_macro(self):
-        duck = Converter()
-        duck.flash_macro = True
-        self.assertEqual(duck.translate_line('STRING abcdef'), 'Keyboard.print(F("abcdef"));')
+        duck = Converter(flash_macro=True)
+        self.assertEqual(duck.translate_line('STRING abcdef'), 'kbd_print(F("abcdef"));')
 
     def test_translate_line_repeat(self):
         duck = Converter()
@@ -140,16 +108,16 @@ for (int _repeat = 0; _repeat < 2; _repeat++)
         self.assertEqual(duck.translate_line('REPEAT 2'), '''
 for (int _repeat = 0; _repeat < 2; _repeat++)
 {
-    Keyboard.print("abcdef");
+    kbd_print("abcdef");
 }
 ''')
-        self.assertEqual(duck.translate_line('REPEAT'), 'Keyboard.print("abcdef");')
+        self.assertEqual(duck.translate_line('REPEAT'), 'kbd_print("abcdef");')
 
         duck.translate_line('DEFAULT_DELAY 125')
         self.assertEqual(duck.translate_line('REPEAT 2'), '''
 for (int _repeat = 0; _repeat < 2; _repeat++)
 {
-    Keyboard.print("abcdef");
+    kbd_print("abcdef");
     delay(125);
 }
 ''')
@@ -159,19 +127,12 @@ for (int _repeat = 0; _repeat < 2; _repeat++)
         for entry in TYPE_STRING:
             self.assertEqual(duck.type_string(entry[STRING], entry[MODIFIERS]), entry[RESULT])
 
-    def test_type_string_digispark(self):
-        duck = Converter()
-        duck.convert_type  = duckyconvert.TYPE_DIGISPARK
-        for entry in TYPE_STRING_DIGISPARK:
-            self.assertEqual(duck.type_string(entry[STRING], entry[MODIFIERS]), entry[RESULT])
-
     def test_get_key_from_str(self):
         duck = Converter()
         for key, val in GET_KEY_FROM_STR.items():
             self.assertEqual(duck.get_key_from_str(key), val)
 
     def test_get_key_from_str_teensy(self):
-        duck = Converter()
-        duck.convert_type = duckyconvert.TYPE_TEENSY
+        duck = Converter(convert_type=duckyconvert.TYPE_TEENSY)
         for key, val in GET_KEY_FROM_STR_TEENSY.items():
             self.assertEqual(duck.get_key_from_str(key), val)

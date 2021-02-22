@@ -2,6 +2,9 @@
 
 #include <Keyboard.h>
 
+#define kbd_print(x) Keyboard.print(x)
+#define kbd_println(x) Keyboard.println(x)
+
 #define KEY_SPACE ' '
 
 #define KEY_PRINTSCREEN 0xce
@@ -59,7 +62,7 @@ void setup()
     // payload
 
     delay(25);
-    Keyboard.print("echo \"If you can read this, you are in big trouble\"");
+    kbd_print("echo \"If you can read this, you are in big trouble\"");
 
     delay(25);
     typeKey(KEY_ENTER, 0);

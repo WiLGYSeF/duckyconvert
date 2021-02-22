@@ -183,10 +183,7 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
         string = '"%s"' % string.replace('\\', r'\\').replace('"', r'\"')
         if self.flash_macro:
             string = 'F(%s)' % string
-
-        if self.convert_type == TYPE_DIGISPARK:
-            return 'DigiKeyboard.print(%s);' % string
-        return 'Keyboard.print(%s);' % string
+        return 'kbd_print(%s);' % string
 
     def indent_block(self, block, level, indent='    '):
         result = ''
