@@ -1,3 +1,6 @@
-todo.txt
+__pycache__/
+htmlcov/
 examples/*.txt
-*.ino
+.coverage
+todo.txt
+

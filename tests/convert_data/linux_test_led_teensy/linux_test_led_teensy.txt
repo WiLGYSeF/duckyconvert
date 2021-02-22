@@ -1,0 +1,15 @@
+DEFAULT_DELAY 25
+
+REM spawn terminal
+CTRL-ALT T
+DELAY 300
+
+REM move to bottom corner of screen
+ALT F7
+SHIFT DOWN
+REPEAT 3
+ENTER
+
+REM payload
+STRING echo "If you can read this, you are in big trouble"
+ENTER
