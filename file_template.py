@@ -25,6 +25,8 @@ HEADER_ARDUINO = '''\
 HEADER_DIGISPARK = '''\
 #include "DigiKeyboard.h"
 
+#define delay(x) DigiKeyboard.delay(x)
+
 #define KEY_ESC 41
 #define KEY_BACKSPACE 42
 #define KEY_TAB 43

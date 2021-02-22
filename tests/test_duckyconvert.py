@@ -25,7 +25,6 @@ TRANSLATE_LINE = {
 }
 
 TRANSLATE_LINE_DIGISPARK = {
-    'DELAY 100': 'DigiKeyboard.delay(100);',
     'STRING this is a "test"': r'DigiKeyboard.print("this is a \"test\"");',
 }
 
@@ -58,9 +57,7 @@ TYPE_STRING = [
     {
         STRING: 'abcdef',
         MODIFIERS: ['CTRL', 'SHIFT'],
-        RESULT: '''\
-Keyboard.print("abcdef");
-'''
+        RESULT: 'Keyboard.print("abcdef");'
     },
     {
         STRING: 'F6',
@@ -73,9 +70,7 @@ TYPE_STRING_DIGISPARK = [
     {
         STRING: 'yeet',
         MODIFIERS: ['ALT'],
-        RESULT: '''\
-DigiKeyboard.print("yeet");
-'''
+        RESULT: 'DigiKeyboard.print("yeet");'
     }
 ]
 
@@ -119,7 +114,7 @@ class DuckyconvertTest(unittest.TestCase):
 for (int _repeat = 0; _repeat < 2; _repeat++)
 {
     DigiKeyboard.print("abcdef");
-    DigiKeyboard.delay(125);
+    delay(125);
 }
 ''')
 

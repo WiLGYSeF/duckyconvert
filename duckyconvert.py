@@ -106,10 +106,7 @@ class Converter:
             return None
         if cmd == 'DELAY':
             check_for_val()
-            val = val.strip()
-            if self.convert_type == TYPE_DIGISPARK:
-                return 'DigiKeyboard.delay(%d);' % int(val)
-            return 'delay(%d);' % int(val)
+            return 'delay(%d);' % int(val.strip())
         if cmd == 'STRING':
             check_for_val()
             return self.type_string(val)
@@ -160,13 +157,7 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
             if result is not None:
                 string += self.indent_block(result, 1)
                 if self.global_delay > 0:
-                    if self.convert_type == TYPE_DIGISPARK:
-                        string += self.indent_block(
-                            'DigiKeyboard.delay(%d);' % self.global_delay,
-                            1
-                        )
-                    else:
-                        string += self.indent_block('delay(%d);' % self.global_delay, 1)
+                    string += self.indent_block('delay(%d);' % self.global_delay, 1)
 
             return string + '}\n'
         if cmd in KEYS_UNPRINTABLE_REPLACE or cmd in KEYS_UNPRINTABLE:
@@ -193,14 +184,9 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
         if self.flash_macro:
             string = 'F(%s)' % string
 
-        if len(modifiers) == 0:
-            if self.convert_type == TYPE_DIGISPARK:
-                return 'DigiKeyboard.print(%s);' % string
-            return 'Keyboard.print(%s);' % string
-
         if self.convert_type == TYPE_DIGISPARK:
-            return 'DigiKeyboard.print(%s);\n' % string
-        return 'Keyboard.print(%s);\n' % string
+            return 'DigiKeyboard.print(%s);' % string
+        return 'Keyboard.print(%s);' % string
 
     def indent_block(self, block, level, indent='    '):
         result = ''
@@ -293,8 +279,7 @@ void setup()
             outf.write('\n')
 
             if self.global_delay > 0:
-                delay_fnc = 'DigiKeyboard.delay' if self.convert_type == TYPE_DIGISPARK else 'delay'
-                outf.write(self.indent_block('%s(%d);' % (delay_fnc, self.global_delay), 1))
+                outf.write(self.indent_block('delay(%d);' % self.global_delay, 1))
 
         outf.write(self.indent_block(
             file_template.unsetup_keyboard(
