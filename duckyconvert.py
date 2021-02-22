@@ -69,14 +69,14 @@ CMD_SPECIAL = ['REM', 'DEFAULT_DELAY', 'DEFAULTDELAY', 'REPEAT']
 
 
 class Converter:
-    def __init__(self):
-        self.convert_type = TYPE_ARDUINO
-        self.global_delay = 0
-        self.flash_macro = False
-        self.led_pin = None
-        self.keyboard_init_wait = 2000
-        self.press_delay = 0
+    def __init__(self, **kwargs):
+        self.convert_type = kwargs.get('convert_type', TYPE_ARDUINO)
+        self.flash_macro = kwargs.get('flash_macro', False)
+        self.led_pin = kwargs.get('led_pin', None)
+        self.keyboard_init_wait = kwargs.get('keyboard_init_wait', 2000)
+        self.press_delay = kwargs.get('press_delay', 0)
 
+        self.global_delay = 0
         self.last_cmd = None
 
     def translate_line(self, line):
@@ -388,21 +388,22 @@ def main(argv):
 
     argspace = aparser.parse_args(argv)
 
-    if argspace.files[0] == '-':
-        infile = sys.stdin
-    else:
+    if argspace.files[0] != '-':
         infile = open(argspace.files[0], 'r')
-
-    if argspace.files[1] == '-':
-        outfile = sys.stdout
     else:
-        outfile = open(argspace.files[1], 'w')
+        infile = sys.stdin
 
-    duck = Converter()
-    duck.keyboard_init_wait = argspace.wait
-    duck.press_delay = argspace.press_delay
-    duck.led_pin = argspace.led
-    duck.flash_macro = argspace.flash
+    if argspace.files[1] != '-':
+        outfile = open(argspace.files[1], 'w')
+    else:
+        outfile = sys.stdout
+
+    duck = Converter(
+        keyboard_init_wait=argspace.wait,
+        press_delay=argspace.press_delay,
+        led_pin=argspace.led,
+        flash_macro=argspace.flash
+    )
 
     try:
         duck.convert_to_file(infile, outfile)
