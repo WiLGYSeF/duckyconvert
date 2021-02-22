@@ -1,4 +1,7 @@
 # duckyconvert
+[![Build Status](https://www.travis-ci.com/WiLGYSeF/duckyconvert.svg?branch=master)](https://www.travis-ci.com/WiLGYSeF/duckyconvert)
+[![codecov](https://codecov.io/gh/WiLGYSeF/duckyconvert/branch/master/graph/badge.svg?token=247IMET51C)](https://codecov.io/gh/WiLGYSeF/duckyconvert)
+
 Converts duckyscript to Arduino, Teensy, or Digispark keyboard HID code.
 
 ## Duckyscript Syntax
