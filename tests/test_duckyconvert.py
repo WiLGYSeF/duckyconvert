@@ -21,6 +21,8 @@ TRANSLATE_LINE = {
     'RETURN': 'kbd_type(KEY_ENTER);',
     'CTRL b': "kbd_type('B', 1, KEY_LEFT_CTRL);",
     'CTRL-ALT-SHIFT c': "kbd_type('C', 3, KEY_LEFT_CTRL, KEY_LEFT_ALT, KEY_LEFT_SHIFT);",
+    'CTRL-ALT SHIFT c': "kbd_type('C', 3, KEY_LEFT_CTRL, KEY_LEFT_ALT, KEY_LEFT_SHIFT);",
+    'CTRL-ALT-SHIFT': "kbd_type(0, 3, KEY_LEFT_CTRL, KEY_LEFT_ALT, KEY_LEFT_SHIFT);",
     'CTRL-INVALID b': Exception(),
 }
 

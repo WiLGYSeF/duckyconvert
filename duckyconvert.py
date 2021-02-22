@@ -125,10 +125,13 @@ class Converter:
             if not cmd.startswith(mod):
                 continue
 
-            string = self.type_string(val, cmd.split('-'))
-            if string is None:
-                raise ValueError('invalid key for %s: %s' % (cmd, val))
-            return string
+            modifiers = cmd.split('-')
+            if val is not None and ' ' in val:
+                valspl = val.split(' ')
+                modifiers.extend(valspl[:-1])
+                val = valspl[-1]
+
+            return self.type_string(val, modifiers)
 
         if cmd in ('APP', 'MENU'):
             return 'kbd_type(KEY_MENU);'
@@ -173,6 +176,9 @@ for (int _repeat = 0; _repeat < %s; _repeat++)
             lambda x: MODIFIER_KEYMAPS[self.convert_type][x],
             modifiers
         ))
+
+        if string is None:
+            return 'kbd_type(0, %d, %s);' % (len(modifiers), ', '.join(modifiers))
 
         key = self.get_key_from_str(string)
         if key is not None:
